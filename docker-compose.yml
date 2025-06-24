@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  mysql_db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: db_crud
+      MYSQL_USER: user_crud
+      MYSQL_PASSWORD: root
+    volumes:
+      - ./mysql:/var/lib/mysql  # Datos persistentes
+    ports:
+      - "3307:3306"
+    networks:
+      - blog_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  backend:
+    container_name: nest_backend
+    build:
+      context: ./backend  # Cambiado para apuntar a la subcarpeta
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/usr/src/app  # Montar solo el backend
+      - /usr/src/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=mysql_db
+      - DB_PORT=3306
+      - DB_USERNAME=user_crud
+      - DB_PASSWORD=root
+      - DB_DATABASE=db_crud
+    depends_on:
+      mysql_db:
+        condition: service_healthy
+    networks:
+      - blog_network
+    command: pnpm run start:dev
+
+networks:
+  blog_network:
+    driver: bridge
