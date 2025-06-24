@@ -105,6 +105,7 @@ Esta es la API central del portafolio y blog profesional de **Víctor Trimpai**.
 
 2. **Instalar dependencias**
    ```bash
+   cd backend
    pnpm install
    ```
 
