@@ -103,6 +103,7 @@ export class AuthController {
 
     //edpoint para eliminar usuario logicamente
     @Delete(':id/deleted')
+    @Roles('Administrador') // solo 'admin'puede acceder
     async deletedUser(@Param(
         'id',
         new ParseUUIDPipe({
