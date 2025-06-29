@@ -4,9 +4,9 @@ import { CreateRolDto } from '../dto/create-rol.dto';
 import { RolService } from './rol.service';
 import { JwtAuthGuard } from '../authService/guards/jwt-auth.guard';
 import { RolesGuard } from '../authService/guards/roles.guard';
-import { Roles } from '../authService/decorators/roles.decorator';
+import { Roles } from '../decorators/roles.decorator';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
-import { User } from '../authService/decorators/user.decorator';
+import { User } from '../decorators/user.decorator';
 import { UpdateRolDto } from '../dto/update-rol-dto.dto';
 
 @Controller('rol')

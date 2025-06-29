@@ -8,6 +8,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import * as cookieParser from 'cookie-parser';
 import { Rol } from '../entities/Rol.entity';
+import { EncryptionService } from '../common/encryption.service';
 
 
 @Module({
@@ -19,12 +20,17 @@ import { Rol } from '../entities/Rol.entity';
       signOptions: { expiresIn: '1h' },
     }),
   ],
-  providers: [AuthService,],
+  providers: [
+    AuthService,
+    EncryptionService,
+  ],
   controllers: [AuthController],
   exports: [
-    PassportModule, 
+    PassportModule,
     JwtModule,
-    AuthService,],
+    AuthService,
+    EncryptionService,
+  ],
 })
 export class AuthModule {
   configure(consumer: MiddlewareConsumer) {

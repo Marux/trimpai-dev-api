@@ -8,7 +8,9 @@ import { Login } from '../entities/Login.entity';
 import * as bcrypt from 'bcryptjs';
 import Utils from '../utils/error.utils';
 import { CreateUsuarioDto } from '../dto/create-user.dto';
+import { UpdateUsuarioDto } from '../dto/update-user.dto';
 import { Rol } from 'src/entities/Rol.entity';
+import { EncryptionService } from '../common/encryption.service';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +22,8 @@ export class AuthService {
     @InjectRepository(Rol)
     private rolRepository: Repository<Rol>,
     private jwtService: JwtService,
+    private encryptionService: EncryptionService,
+
   ) { }
 
   async validateUser(email: string, pass: string): Promise<Usuario | null> {
@@ -74,7 +78,7 @@ export class AuthService {
     }
   }
 
-  async createUser(dto: CreateUsuarioDto): Promise<{ message: string; data: { id: string; nombre: string; email: string; } }> {
+  async createUser(dto: CreateUsuarioDto): Promise<{ message: string; data: { id: string; nombre: string; email: string } }> {
     try {
       const existing = await this.usuarioRepository.findOne({ where: { email: dto.email } });
       if (existing) {
@@ -87,10 +91,10 @@ export class AuthService {
       }
 
       const hashedPassword = await bcrypt.hash(dto.password, 10);
-      const hashedRut = await bcrypt.hash(dto.run, 10);
+      const encryptedRut = this.encryptionService.encrypt(dto.run);
 
       const usuario = this.usuarioRepository.create({
-        run: hashedRut,
+        run: encryptedRut,
         nombre: dto.nombre,
         email: dto.email,
         password: hashedPassword,
@@ -111,4 +115,93 @@ export class AuthService {
       return Utils.errorResponse(error);
     }
   }
+
+  async getAlluser() {
+    try {
+      const users = await this.usuarioRepository.find({
+        where: { status: true, isDeleted: false },
+        relations: ['rol'],
+      });
+
+      const sanitizedUsers = users.map((user) => {
+        let runVisible = '****';
+
+        try {
+          const decryptedRun = this.encryptionService.decrypt(user.run);
+          runVisible += decryptedRun.slice(-4);
+        } catch (err) {
+          runVisible += 'XXXX';
+        }
+
+        return {
+          id: user.id,
+          nombre: user.nombre,
+          email: user.email,
+          run: runVisible,
+          rol: user.rol?.nombre || null,
+          dateCreated: user.dateCreated,
+          dateModified: user.dateModified,
+          status: user.status,
+          isActivated: user.isActivated,
+          createdBy: user.createdBy,
+          modifiedBy: user.modifiedBy,
+        };
+      });
+
+      return {
+        message: '✅ Usuarios encontrados con éxito',
+        data: sanitizedUsers,
+      };
+
+    } catch (error) {
+      return Utils.errorResponse(error);
+    }
+  }
+
+  async editUser(dto: UpdateUsuarioDto, id: string): Promise<{ message: string }> {
+    try {
+      const user = await this.usuarioRepository.findOne({ where: { id } });
+      if (!user) {
+        throw new NotFoundException(`❌ Usuario con ID ${id} no encontrado.`);
+      }
+
+      // Validar que el nuevo email no esté en uso por otro usuario
+      if (dto.email && dto.email !== user.email) {
+        const existing = await this.usuarioRepository.findOne({ where: { email: dto.email } });
+        if (existing) {
+          throw new ConflictException('⚠️ Ya existe un usuario con ese correo electrónico.');
+        }
+      }
+
+      // Actualizar solo campos proporcionados
+      if (dto.run) {
+        user.run = this.encryptionService.encrypt(dto.run); // ← cambiamos bcrypt por AES
+      }
+
+      if (dto.nombre) {
+        user.nombre = dto.nombre;
+      }
+
+      if (dto.email) {
+        user.email = dto.email;
+      }
+
+      if (dto.password) {
+        user.password = await bcrypt.hash(dto.password, 10); // ← bcrypt solo para password
+      }
+
+      if (dto.modifiedBy) {
+        user.modifiedBy = dto.modifiedBy;
+      }
+
+      await this.usuarioRepository.save(user);
+
+      return {
+        message: '✅ Usuario actualizado con éxito.',
+      };
+    } catch (error) {
+      return Utils.errorResponse(error);
+    }
+  }
+
 }

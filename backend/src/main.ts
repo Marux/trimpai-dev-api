@@ -4,7 +4,10 @@ import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 import { Request, Response, NextFunction } from 'express';
-
+import { JwtAuthGuard } from './authService/guards/jwt-auth.guard';
+import { RolesGuard } from './authService/guards/roles.guard';
+import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
 
 class Application {
   private readonly logger = new Logger(Application.name);
@@ -12,14 +15,22 @@ class Application {
   async bootstrap() {
     const app = await NestFactory.create(AppModule);
 
-   // Configuración importante:
-   app.use(cookieParser());
-   app.enableCors({
-     origin: true, // o especifica tu frontend ej: 'http://localhost:3000'
-     credentials: true, // Esto es crucial para cookies
-   });
+    const reflector = app.get(Reflector);
+    const jwtService = app.get(JwtService);
 
-   // Middleware para redirigir la raíz a /docs
+    app.useGlobalGuards(
+      new JwtAuthGuard(jwtService, reflector),
+      new RolesGuard(reflector),
+    );
+
+    // Configuración importante:
+    app.use(cookieParser());
+    app.enableCors({
+      origin: true, // o especifica tu frontend ej: 'http://localhost:3000'
+      credentials: true, // Esto es crucial para cookies
+    });
+
+    // Middleware para redirigir la raíz a /docs
     app.use((req: Request, res: Response, next: NextFunction) => {
       if (req.url === '/') {
         return res.redirect('/docs');
@@ -27,16 +38,16 @@ class Application {
       next();
     });
 
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
+    app.useGlobalPipes(new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }));
 
-  // Swagger setup
-const config = new DocumentBuilder()
-  .setTitle('Trimpai Dev API')
-  .setDescription(`
+    // Swagger setup
+    const config = new DocumentBuilder()
+      .setTitle('Trimpai Dev API')
+      .setDescription(`
     API central del portafolio y blog profesional de Víctor Trimpai.
     Tecnologías: Node.js/NestJS con autenticación JWT y MySQL.
     
@@ -50,18 +61,18 @@ const config = new DocumentBuilder()
     · GitHub: https://github.com/Marux
     · LinkedIn: https://www.linkedin.com/in/victor-trimpai-dev/
   `)
-  .setVersion('1.0')
-  // .addTag('Projects', 'Endpoints para proyectos destacados')
-  // .addTag('Blog', 'Publicaciones técnicas y experiencias')
-  .addTag('Auth', 'Autenticación y gestión de usuarios')
-  .addTag('Rol', 'Roles y permisos')
-  .build();
+      .setVersion('1.0')
+      // .addTag('Projects', 'Endpoints para proyectos destacados')
+      // .addTag('Blog', 'Publicaciones técnicas y experiencias')
+      .addTag('Auth', 'Autenticación y gestión de usuarios')
+      .addTag('Rol', 'Roles y permisos')
+      .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document);
 
 
-  const PORT = 3000;
+    const PORT = 3000;
     await app.listen(PORT, '0.0.0.0');
 
     // Mensajes en consola
