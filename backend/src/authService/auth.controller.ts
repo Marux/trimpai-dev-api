@@ -1,5 +1,5 @@
 //src/authService/auth.controller.ts
-import { Controller, Post, Body, Res, Req, UnauthorizedException, Patch, Param, Get, UseGuards, ParseUUIDPipe, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, Res, Req, UnauthorizedException, Patch, Param, Get, UseGuards, ParseUUIDPipe, BadRequestException, Delete } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from '../dto/login.dto';
@@ -83,6 +83,35 @@ export class AuthController {
     ) {
         dto.modifiedBy = user.sub;
         return this.authService.editUser(dto, id);
+    }
+
+    //endpoint para desactivar usuario logicamente
+    @Patch(':id/desactivate')
+    @Roles('Administrador')
+    async desactivateUser(
+        @Param(
+            'id',
+            new ParseUUIDPipe({
+                version: '4',
+                exceptionFactory: () => new BadRequestException(`❌ El parámetro 'id' debe ser uno válido.`),
+            }),
+        ) id: string,
+        @User() user: JwtPayload,
+    ) {
+        return this.authService.desactivateUser(id, user.sub);
+    }
+
+    //edpoint para eliminar usuario logicamente
+    @Delete(':id/deleted')
+    async deletedUser(@Param(
+        'id',
+        new ParseUUIDPipe({
+            version: '4',
+            exceptionFactory: () => new BadRequestException(`❌ El parámetro 'id' debe ser uno válido.`),
+        }),
+    ) id: string,
+        @User() user: JwtPayload,) {
+        return this.authService.deletedUser(id, user.sub);
     }
 
     //endpoint para obtener todos los usuarios
