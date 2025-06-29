@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException, OnModuleInit, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Rol } from '../entities/Rol.entity';
@@ -17,7 +17,7 @@ export class RolService implements OnModuleInit {
     private readonly EDIT_ROL_NAME = 'Editor';
     private readonly USER_ROL_NAME = 'Usuario';
     private readonly GUEST_ROL_NAME = 'Invitado';
-
+    private readonly logger = new Logger(RolService.name);
 
     constructor(
         @InjectRepository(Usuario)
@@ -61,7 +61,7 @@ export class RolService implements OnModuleInit {
     private async createRoleIfNotExists(roleName: string): Promise<void> {
         const existing = await this.rolRepository.findOneBy({ nombre: roleName });
         if (existing) {
-            console.log(`🔎 [RolService] Rol "${roleName}" ya existe, no se creará de nuevo.`);
+            this.logger.log(`🔎 [RolService] Rol "${roleName}" ya existe, no se creará de nuevo.`);
             return;
         }
 
@@ -71,7 +71,7 @@ export class RolService implements OnModuleInit {
         };
 
         const result = await this.createRol(dto);
-        console.log(`🛠️  [RolService] Rol ${roleName} creado automáticamente ✅`);
+        this.logger.log(`🛠️  [RolService] Rol ${roleName} creado automáticamente ✅`);
     }
 
     private async createAdminUser(adminRol: Rol): Promise<void> {
@@ -93,9 +93,9 @@ export class RolService implements OnModuleInit {
             });
 
             await this.usuarioRepository.save(adminUser);
-            console.log('🛠️  [RolService] Usuario Administrador creado automáticamente ✅');
-            console.log(`🔐  Usuario ID: ${this.ADMIN_USER_ID}`);
-            console.log('⚠️  Recuerda cambiar la contraseña después del primer login!');
+            this.logger.log('🛠️  [RolService] Usuario Administrador creado automáticamente ✅');
+            this.logger.log(`🔐  Usuario ID: ${this.ADMIN_USER_ID}`);
+            this.logger.log('⚠️  Recuerda cambiar la contraseña después del primer login!');
         }
     }
 
@@ -106,7 +106,7 @@ export class RolService implements OnModuleInit {
         });
 
         if (!adminUser) {
-            console.warn('⚠️ [RolService] No se encontró usuario administrador. Creando uno por defecto...');
+            this.logger.log('⚠️ [RolService] No se encontró usuario administrador. Creando uno por defecto...');
             const adminRol = await this.rolRepository.findOneBy({ nombre: this.ADMIN_ROL_NAME });
             if (!adminRol) {
                 throw new NotFoundException('⚠️ Rol "Administrador" no encontrado, no se puede crear el usuario admin.');

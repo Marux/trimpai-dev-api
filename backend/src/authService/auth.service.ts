@@ -1,5 +1,5 @@
 ///src/authService/auth.service.ts
-import { Injectable, UnauthorizedException, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -119,7 +119,7 @@ export class AuthService {
   async getAlluser() {
     try {
       const users = await this.usuarioRepository.find({
-        where: { status: true, isDeleted: false },
+        where: { isDeleted: false },
         relations: ['rol'],
       });
 
@@ -142,7 +142,7 @@ export class AuthService {
           dateCreated: user.dateCreated,
           dateModified: user.dateModified,
           status: user.status,
-          isActivated: user.isActivated,
+          isDeleted: user.isDeleted,
           createdBy: user.createdBy,
           modifiedBy: user.modifiedBy,
         };
@@ -160,7 +160,7 @@ export class AuthService {
 
   async editUser(dto: UpdateUsuarioDto, id: string): Promise<{ message: string }> {
     try {
-      const user = await this.usuarioRepository.findOne({ where: { id } });
+      const user = await this.usuarioRepository.findOne({ where: { id, status: true, isDeleted: false }, });
       if (!user) {
         throw new NotFoundException(`❌ Usuario con ID ${id} no encontrado.`);
       }
@@ -175,7 +175,7 @@ export class AuthService {
 
       // Actualizar solo campos proporcionados
       if (dto.run) {
-        user.run = this.encryptionService.encrypt(dto.run); // ← cambiamos bcrypt por AES
+        user.run = this.encryptionService.encrypt(dto.run);
       }
 
       if (dto.nombre) {
@@ -187,7 +187,7 @@ export class AuthService {
       }
 
       if (dto.password) {
-        user.password = await bcrypt.hash(dto.password, 10); // ← bcrypt solo para password
+        user.password = await bcrypt.hash(dto.password, 10);
       }
 
       if (dto.modifiedBy) {
@@ -204,4 +204,48 @@ export class AuthService {
     }
   }
 
+  async desactivateUser(id: string, modifiedBy: string): Promise<{ message: string }> {
+    try {
+      const user = await this.usuarioRepository.findOne({ where: { id, isDeleted: false } });
+      if (!user) {
+        throw new NotFoundException(`❌ Usuario con ID ${id} no encontrado.`);
+      }
+
+      if (user.status === false) {
+        throw new BadRequestException('⚠️ El usuario ya se encuentra desactivado.');
+      }
+
+      user.status = false;
+      user.modifiedBy = modifiedBy;
+
+      await this.usuarioRepository.save(user);
+
+      return {
+        message: '✅ Usuario desactivado con éxito.',
+      };
+    } catch (error) {
+      return Utils.errorResponse(error);
+    }
+  }
+
+  async deletedUser(id: string, modifiedBy: string): Promise<{ message: string }> {
+    try {
+      const user = await this.usuarioRepository.findOne({ where: { id, isDeleted: false } });
+      if (!user) {
+        throw new NotFoundException(`❌ Usuario con ID ${id} no encontrado.`);
+      }
+
+      user.status = false;
+      user.isDeleted = true;
+      user.modifiedBy = modifiedBy;
+      await this.usuarioRepository.save(user);
+
+      return {
+        message: '✅ Usuario eliminado con éxito.',
+      };
+    } catch (error) {
+      return Utils.errorResponse(error);
+    }
+
+  }
 }
