@@ -29,7 +29,7 @@ export class AuthService {
   async validateUser(email: string, pass: string): Promise<Usuario | null> {
     try {
       const user = await this.usuarioRepository.findOne({
-        where: { email },
+        where: { email, status: true, isDeleted: false },
         relations: ['rol'],
       });
 
@@ -158,6 +158,48 @@ export class AuthService {
     }
   }
 
+  async getUserById(id: string): Promise<{ message: string; data?: any }> {
+    try {
+      const user = await this.usuarioRepository.findOne({
+        where: { id, isDeleted: false },
+        relations: ['rol'],
+      });
+
+      if (!user) {
+        throw new NotFoundException(`❌ Usuario con ID ${id} no encontrado.`);
+      }
+
+      let runVisible = '****';
+
+      try {
+        const decryptedRun = this.encryptionService.decrypt(user.run);
+        runVisible += decryptedRun.slice(-4);
+      } catch (err) {
+        runVisible += 'XXXX';
+      }
+
+      return {
+        message: '✅ Usuario encontrado con éxito',
+        data: {
+          id: user.id,
+          nombre: user.nombre,
+          email: user.email,
+          run: runVisible,
+          rol: user.rol?.nombre || null,
+          dateCreated: user.dateCreated,
+          dateModified: user.dateModified,
+          status: user.status,
+          isDeleted: user.isDeleted,
+          createdBy: user.createdBy,
+          modifiedBy: user.modifiedBy,
+        },
+      };
+    } catch (error) {
+      return Utils.errorResponse(error);
+    }
+  }
+
+
   async editUser(dto: UpdateUsuarioDto, id: string): Promise<{ message: string }> {
     try {
       const user = await this.usuarioRepository.findOne({ where: { id, status: true, isDeleted: false }, });
@@ -230,7 +272,10 @@ export class AuthService {
 
   async deletedUser(id: string, modifiedBy: string): Promise<{ message: string }> {
     try {
-      const user = await this.usuarioRepository.findOne({ where: { id, isDeleted: false } });
+      const user = await this.usuarioRepository.findOne({
+        where: { id, isDeleted: false },
+      });
+
       if (!user) {
         throw new NotFoundException(`❌ Usuario con ID ${id} no encontrado.`);
       }
@@ -238,6 +283,10 @@ export class AuthService {
       user.status = false;
       user.isDeleted = true;
       user.modifiedBy = modifiedBy;
+
+      const emailParts = user.email.split('@');
+      user.email = `${emailParts[0]}_DELETED_${user.id}@${emailParts[1]}`;
+
       await this.usuarioRepository.save(user);
 
       return {
@@ -246,6 +295,29 @@ export class AuthService {
     } catch (error) {
       return Utils.errorResponse(error);
     }
-
   }
+
+  async getUserProfile(userId: string) {
+    try {
+      const user = await this.usuarioRepository.findOne({
+        where: { id: userId, status: true, isDeleted: false },
+        relations: ['rol'],
+      });
+
+      if (!user) {
+        throw new NotFoundException('❌ Usuario no encontrado.');
+      }
+
+      return {
+        id: user.id,
+        nombre: user.nombre,
+        email: user.email,
+        rol: user.rol?.nombre ?? 'Sin rol',
+      };
+    } catch (error) {
+      return Utils.errorResponse(error);
+    }
+  }
+
+
 }

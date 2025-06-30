@@ -20,7 +20,7 @@ export class AuthController {
 
     //login
     @Post('login')
-    @Public()
+    @Public() // Endpoint publico
     async login(
         @Body() loginDto: LoginDto,
         @Res({ passthrough: true }) response: Response,
@@ -49,7 +49,7 @@ export class AuthController {
 
     //deslogin
     @Post('logout')
-    @Public()
+    @Public() // Endpoint publico
     async logout(@Res({ passthrough: true }) response: Response) {
         response.clearCookie('access_token');
         return { message: 'Logout exitoso' };
@@ -57,14 +57,14 @@ export class AuthController {
 
     //creacion de usuario nuevo
     @Post('createUser')
-    @Public()
+    @Public() // Endpoint publico
     async createUser(@Body() dto: CreateUsuarioDto) {
         return this.authService.createUser(dto);
     }
 
     //editar usuario
     @Patch(':id')
-    @Roles('Administrador', 'Usuario')
+    @Roles('Administrador', 'Usuario', 'Editor')
     async editUser(
         @Body() dto: UpdateUsuarioDto,
         @Param(
@@ -122,4 +122,23 @@ export class AuthController {
         return this.authService.getAlluser();
     }
 
+    //endpoint para obtener perfil del usuario actual
+    //no requerie de decorador Roles, ya que es un endpoint que se valida por el middleware JwtAuthGuard
+    @Get('me')
+    async getMyProfile(@User() user: JwtPayload) {
+        return this.authService.getUserProfile(user.sub);
+    }
+
+    //endpoint para obtener un usuario por id
+    @Get(':id')
+    @Roles('Administrador')
+    async getUserById(
+        @Param('id', new ParseUUIDPipe({
+            version: '4',
+            exceptionFactory: () => new BadRequestException(`❌ El parámetro 'id' debe ser uno válido.`),
+        }))
+        id: string
+    ) {
+        return this.authService.getUserById(id);
+    }
 }
