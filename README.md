@@ -1,8 +1,4 @@
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
-
-> **Nota**: Proyecto en desarrollo - La licencia puede actualizarse según evolucione el proyecto.# 🚀 Portfolio Backend API
+# 🚀 Portfolio Backend API
 
 <p align="center">
   <a href="http://nestjs.com/" target="blank">
@@ -43,6 +39,7 @@ Esta es la API central del portafolio y blog profesional de **Víctor Trimpai**.
 
 - **Portafolio Digital**: Gestión de proyectos destacados y información profesional
 - **Blog Técnico**: Plataforma para compartir experiencias y conocimientos en desarrollo
+- **Sistema de Noticias**: Gestión completa de noticias con sistema de revisiones y estados
 - **Sistema de Usuarios**: Autenticación segura con roles y permisos
 - **API RESTful**: Endpoints bien documentados para integración con frontend
 
@@ -61,6 +58,16 @@ Esta es la API central del portafolio y blog profesional de **Víctor Trimpai**.
 - Sistema de permisos basado en roles
 - Seguimiento de actividad de login
 
+### 📰 **Sistema de Noticias**
+- Creación y gestión de noticias con contenido rich media
+- Sistema de revisiones y aprobaciones
+- Estados de publicación (pendiente, revisión, publicado)
+- Gestión de vigencia de noticias
+- Contador de visitas automático
+- Soft delete para preservar datos
+- Soporte para imágenes, videos y párrafos estructurados
+- Categorización de noticias
+
 ### 🏗️ **Arquitectura Sólida**
 - Patrón Repository con TypeORM
 - Inyección de dependencias
@@ -72,6 +79,7 @@ Esta es la API central del portafolio y blog profesional de **Víctor Trimpai**.
 - Panel administrativo automático
 - Usuario administrador por defecto
 - Gestión completa de roles y permisos
+- Sistema de workflow para noticias
 - Logs detallados del sistema
 
 ## 🔧 Tecnologías
@@ -206,6 +214,20 @@ Una vez que la aplicación esté ejecutándose, visita:
 | `PATCH` | `/rol/desactivate/:id` | Desactivar rol | ✅ | Administrador |
 | `DELETE` | `/rol/:id` | Eliminar rol | ✅ | Administrador |
 
+#### 📰 Gestión de Noticias (`/noticias`)
+| Método | Endpoint | Descripción | Requiere Auth | Rol Requerido |
+|--------|----------|-------------|---------------|---------------|
+| `GET` | `/noticias` | Listar noticias públicas | ❌ | - |
+| `GET` | `/noticias/findAll` | Listar todas las noticias | ✅ | Admin/Editor/Usuario |
+| `GET` | `/noticias/getPendingRev` | Noticias pendientes de revisión | ✅ | Admin/Editor/Usuario |
+| `GET` | `/noticias/:id` | Obtener noticia por ID | ❌ | - |
+| `POST` | `/noticias` | Crear nueva noticia | ✅ | Admin/Editor/Usuario |
+| `PATCH` | `/noticias/:id` | Actualizar noticia | ✅ | Admin/Editor/Usuario |
+| `PATCH` | `/noticias/:id/desactivate` | Desactivar noticia | ✅ | Admin/Editor |
+| `PATCH` | `/noticias/:id/reactivate` | Reactivar noticia | ✅ | Admin/Editor |
+| `PATCH` | `/noticias/:id/vigencia` | Cambiar vigencia | ✅ | Admin/Editor |
+| `DELETE` | `/noticias/:id` | Eliminar noticia (soft delete) | ✅ | Administrador |
+
 ### Autenticación
 
 La API utiliza **JWT con cookies HTTP-only** para la autenticación. El flujo es el siguiente:
@@ -254,6 +276,62 @@ POST /auth/createUser
 }
 ```
 
+### Sistema de Noticias
+
+#### 📝 **Crear Noticia**
+```javascript
+POST /noticias
+{
+  "titulo": "Mi primera noticia",
+  "descripcion": "Descripción de la noticia",
+  "contenido": "Contenido completo de la noticia..."
+}
+
+// Respuesta
+{
+  "message": "✅ Noticia creada exitosamente y marcada como pendiente de revisión",
+  "id": "uuid-de-la-noticia"
+}
+```
+
+#### 🔍 **Obtener Noticias Públicas**
+```javascript
+GET /noticias
+// Respuesta
+{
+  "message": "✅ Se encontraron 5 noticias publicadas",
+  "noticias": [
+    {
+      "id": "uuid",
+      "titulo": "Título de la noticia",
+      "descripcion": "Descripción",
+      "visitas": 42,
+      "usuario": {
+        "nombre": "Víctor Trimpai"
+      },
+      "imagenes": [...],
+      "categorias": [...],
+      "parrafos": [...],
+      "videos": [...]
+    }
+  ]
+}
+```
+
+#### 📊 **Estados de Noticias**
+Las noticias pasan por diferentes estados:
+- **Pendiente de revisión**: Estado inicial al crear una noticia
+- **En revisión**: Cuando está siendo revisada por un editor
+- **Aprobada**: Lista para publicación
+- **Publicada**: Visible públicamente
+- **Rechazada**: Necesita correcciones
+
+#### 🔄 **Workflow de Noticias**
+1. **Creación**: Usuario crea noticia → Estado "pendiente de revisión"
+2. **Revisión**: Editor/Admin revisa → Aprueba o rechaza
+3. **Publicación**: Si está aprobada → Se puede publicar
+4. **Gestión**: Cambiar vigencia, desactivar o reactivar
+
 > **Nota**: Los nuevos usuarios se crean automáticamente con rol "Usuario"
 
 ## 🧪 Testing
@@ -276,15 +354,35 @@ src/
 ├── authService/           # Módulo de autenticación
 │   ├── auth.controller.ts
 │   ├── auth.service.ts
+│   ├── guards/
+│   │   ├── jwt-auth.guard.ts
+│   │   └── roles.guard.ts
 │   └── auth.module.ts
 ├── roles/                 # Módulo de roles
 │   ├── role.controller.ts
 │   ├── role.service.ts
 │   └── role.module.ts
+├── noticias/              # Módulo de noticias
+│   ├── noticias.controller.ts
+│   ├── noticias.service.ts
+│   ├── dto/
+│   │   ├── create-noticia.dto.ts
+│   │   ├── update-noticia.dto.ts
+│   │   └── public-noticia.dto.ts
+│   └── noticias.module.ts
 ├── entities/              # Entidades de base de datos
 │   ├── Usuario.entity.ts
 │   ├── Rol.entity.ts
-│   └── Login.entity.ts
+│   ├── Login.entity.ts
+│   ├── Noticia.entity.ts
+│   ├── Revision.entity.ts
+│   └── Estado.entity.ts
+├── decorators/            # Decoradores personalizados
+│   ├── user.decorator.ts
+│   ├── roles.decorator.ts
+│   └── public.decorator.ts
+├── interfaces/            # Interfaces TypeScript
+│   └── jwt-payload.interface.ts
 ├── dto/                   # Data Transfer Objects
 │   ├── create-user.dto.ts
 │   └── create-rol.dto.ts
@@ -303,6 +401,9 @@ src/
 - ✅ **Validación de entrada** con class-validator
 - ✅ **CORS configurado** para frontends específicos
 - ✅ **Cookies seguras** con httpOnly
+- ✅ **Guards de roles** para control de acceso
+- ✅ **Endpoints públicos** claramente marcados
+- ✅ **Soft delete** para preservar integridad de datos
 - ✅ **Rate limiting** (recomendado para producción)
 - ✅ **Sanitización de datos** automática
 
@@ -334,14 +435,10 @@ Al iniciar la aplicación por primera vez, se crea automáticamente:
 
 ### Plataformas Recomendadas
 
-- **NestJS Mau**: Plataforma oficial para deployment en AWS
-  ```bash
-  pnpm install -g @nestjs/mau
-  mau deploy
-  ```
-
-- **Heroku**, **Railway**, **DigitalOcean App Platform**
-- **VPS** con PM2 para gestión de procesos
+- **Railway**, **Render**, **DigitalOcean App Platform**
+- **AWS EC2** con PM2 para gestión de procesos
+- **Google Cloud Run** para contenedores
+- **VPS** con Docker Compose
 
 ## 🤝 Contribución
 
@@ -360,6 +457,8 @@ Al iniciar la aplicación por primera vez, se crea automáticamente:
 - 🧪 Agregar tests unitarios y e2e
 - 🔒 Mejorar medidas de seguridad
 - 🚀 Optimización de performance
+- 📰 Mejoras en el sistema de noticias
+- 🔄 Implementar sistema de notificaciones
 - 🐛 Reportar y corregir bugs
 
 > **Nota**: Como el proyecto está en construcción, algunas funcionalidades pueden cambiar. ¡Mantente al día con los issues y discussions!
@@ -372,6 +471,14 @@ Al iniciar la aplicación por primera vez, se crea automáticamente:
 - 💼 **LinkedIn**: [linkedin.com/in/victor-trimpai-dev](https://www.linkedin.com/in/victor-trimpai-dev/)
 - 🐙 **GitHub**: [github.com/Marux](https://github.com/Marux)
 - 🌐 **Portfolio**: [🚧 En construcción - Powered by this API! 🚧]
+
+---
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
+
+> **Nota**: Proyecto en desarrollo - La licencia puede actualizarse según evolucione el proyecto.
 
 ---
 
