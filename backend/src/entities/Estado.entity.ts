@@ -9,6 +9,9 @@ export class Estado {
   @Column({ length: 255 })
   nombre: string;
 
+  @Column({ default: false })
+  publica: boolean; // ← NUEVO: define si este estado publica la noticia
+
   @Column({ default: true })
   status: boolean; // Activo (true) o Inactivo (false)
 
