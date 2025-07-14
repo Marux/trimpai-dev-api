@@ -11,7 +11,7 @@ export class Noticia {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ length: 50 })
+  @Column({ length: 50, unique: true })
   titulo: string;
 
   @Column({ length: 255 })
@@ -19,6 +19,12 @@ export class Noticia {
 
   @Column({ default: true })
   vigente: boolean;
+
+  @Column({ default: 0 })
+  visitas: number;
+
+  @Column({ default: false })
+  publicado: boolean; // false = borrador, true = publicado
 
   @Column({ default: true })
   status: boolean; // Activo (true) o Inactivo (false)
