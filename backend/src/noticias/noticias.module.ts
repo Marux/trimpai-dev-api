@@ -23,12 +23,4 @@ import { AuthModule } from '../authService/auth.module';
   exports: [NoticiasService],
 })
 
-
-//await this.estadoRepository.save([
-//   { nombre: 'pendiente de revisión' },
-//   { nombre: 'aprobado' },
-//   { nombre: 'rechazado' },
-//   { nombre: 'solicitar cambios' },
-// ]);
-
 export class NoticiasModule { }

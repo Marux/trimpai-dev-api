@@ -36,7 +36,7 @@ export class NoticiasService {
 
       // 2. Buscar el estado "pendiente de revisión"
       const estadoPendiente = await this.estadoRepository.findOne({
-        where: { nombre: 'pendiente de revisión' },
+        where: { nombre: 'Pendiente de Revisión' },
       });
 
       if (!estadoPendiente) {
@@ -70,46 +70,67 @@ export class NoticiasService {
     }
   }
 
-  async findAllPublic(): Promise<{ message: string; noticias: PublicNoticiaDto[] }> {
-  try {
-    const noticias = await this.noticiasRepository
-      .createQueryBuilder('noticia')
-      .leftJoinAndSelect('noticia.usuario', 'usuario')
-      .leftJoinAndSelect('noticia.imagenes', 'imagenes')
-      .leftJoinAndSelect('noticia.categorias', 'categorias')
-      .leftJoinAndSelect('categorias.categoria', 'categoria')
-      .leftJoinAndSelect('noticia.parrafos', 'parrafos')
-      .leftJoinAndSelect('noticia.videos', 'videos')
-      .leftJoinAndSelect('noticia.revisiones', 'revisiones')
-      .leftJoinAndSelect('revisiones.estado', 'estado')
-      .where('noticia.isDeleted = false')
-      .andWhere('noticia.status = true')
-      .andWhere('noticia.publicado = true')
-      .andWhere('noticia.vigente = true')
-      .getMany();
+  async findAllPublic(page = 1, limit = 10): Promise<{
+    message: string;
+    noticias: PublicNoticiaDto[];
+    total: number;
+    page: number;
+    lastPage: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+  }> {
+    try {
+      const skip = (page - 1) * limit;
 
-    const publicNoticias: PublicNoticiaDto[] = noticias.map((n) => ({
-      id: n.id,
-      titulo: n.titulo,
-      descripcion: n.descripcion,
-      visitas: n.visitas,
-      usuario: {
-        nombre: n.usuario?.nombre ?? 'Desconocido',
-      },
-      imagenes: n.imagenes,
-      categorias: n.categorias,
-      parrafos: n.parrafos,
-      videos: n.videos,
-    }));
+      const [noticias, total] = await this.noticiasRepository
+        .createQueryBuilder('noticia')
+        .leftJoinAndSelect('noticia.usuario', 'usuario')
+        .leftJoinAndSelect('noticia.imagenes', 'imagenes')
+        .leftJoinAndSelect('noticia.categorias', 'categorias')
+        .leftJoinAndSelect('categorias.categoria', 'categoria')
+        .leftJoinAndSelect('noticia.parrafos', 'parrafos')
+        .leftJoinAndSelect('noticia.videos', 'videos')
+        .leftJoinAndSelect('noticia.revisiones', 'revisiones')
+        .leftJoinAndSelect('revisiones.estado', 'estado')
+        .where('noticia.isDeleted = false')
+        .andWhere('noticia.status = true')
+        .andWhere('noticia.publicado = true')
+        .andWhere('noticia.vigente = true')
+        .skip(skip)
+        .take(limit)
+        .getManyAndCount();
 
-    return {
-      message: `✅ Se encontraron ${publicNoticias.length} noticias publicadas`,
-      noticias: publicNoticias,
-    };
-  } catch (error) {
-    return Utils.errorResponse(error);
+      const publicNoticias: PublicNoticiaDto[] = noticias.map((n) => ({
+        id: n.id,
+        titulo: n.titulo,
+        descripcion: n.descripcion,
+        visitas: n.visitas,
+        fechaCreacion: n.dateCreated,
+        usuario: {
+          nombre: n.usuario?.nombre ?? 'Desconocido',
+        },
+        imagenes: n.imagenes,
+        categorias: n.categorias,
+        parrafos: n.parrafos,
+        videos: n.videos,
+      }));
+
+      const lastPage = Math.ceil(total / limit);
+
+      return {
+        message: `✅ Página ${page} con ${publicNoticias.length} noticias`,
+        noticias: publicNoticias,
+        total,
+        page,
+        lastPage,
+        hasNext: page < lastPage,
+        hasPrevious: page > 1,
+      };
+    } catch (error) {
+      return Utils.errorResponse(error);
+    }
   }
-}
+
 
   async findAll(): Promise<{ message: string; noticias: Noticia[] }> {
     try {
