@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
 import { NoticiasService } from './noticias.service';
 import { CreateNoticiaDto } from './dto/create-noticia.dto';
 import { UpdateNoticiaDto } from './dto/update-noticia.dto';
@@ -7,7 +7,8 @@ import { RolesGuard } from '../authService/guards/roles.guard';
 import { User } from '../decorators/user.decorator';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { Roles } from '../decorators/roles.decorator';
-import { Public } from 'src/decorators/public.decorator';
+import { Public } from '../decorators/public.decorator';
+import { PublicNoticiaDto } from './dto/public-noticia.dto';
 
 @Controller('noticias')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -25,9 +26,25 @@ export class NoticiasController {
 
   @Get()
   @Public()
-  async findAllPublic() {
-    return await this.noticiasService.findAllPublic();
+  async findAllPublic(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+  ): Promise<{
+    message: string;
+    noticias: PublicNoticiaDto[];
+    total: number;
+    page: number;
+    lastPage: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+  }> {
+    // Limita el mínimo a 1 para evitar errores
+    const pageNum = Math.max(1, page);
+    const limitNum = Math.max(1, limit);
+
+    return await this.noticiasService.findAllPublic(pageNum, limitNum);
   }
+
 
   @Get('/findAll')
   @Roles('Administrador', 'Usuario', 'Editor')

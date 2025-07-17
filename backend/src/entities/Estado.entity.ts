@@ -6,7 +6,7 @@ export class Estado {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ length: 255 })
+  @Column({ length: 255, unique: true })
   nombre: string;
 
   @Column({ default: false })

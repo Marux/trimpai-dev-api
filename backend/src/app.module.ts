@@ -5,6 +5,7 @@ import { RoleServiceModule } from './roles/role.module';
 import { AuthModule } from './authService/auth.module';
 import { NoticiasModule } from './noticias/noticias.module';
 import { RevisionesModule } from './revisiones/revisiones.module';
+import { EstadosModule } from './estados/estados.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { RevisionesModule } from './revisiones/revisiones.module';
     AuthModule,
     NoticiasModule,
     RevisionesModule,
+    EstadosModule,
   ],
   controllers: [],
   providers: [],

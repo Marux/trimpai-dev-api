@@ -41,6 +41,7 @@ Esta es la API central del portafolio y blog profesional de **Víctor Trimpai**.
 - **Blog Técnico**: Plataforma para compartir experiencias y conocimientos en desarrollo
 - **Sistema de Noticias**: Gestión completa de noticias con sistema de revisiones y estados
 - **Sistema de Usuarios**: Autenticación segura con roles y permisos
+- **Gestión de Estados**: Control centralizado de estados de workflow para noticias
 - **API RESTful**: Endpoints bien documentados para integración con frontend
 
 ## ✨ Características
@@ -68,6 +69,14 @@ Esta es la API central del portafolio y blog profesional de **Víctor Trimpai**.
 - Soporte para imágenes, videos y párrafos estructurados
 - Categorización de noticias
 
+### 🔄 **Gestión de Estados**
+- Estados predefinidos para workflow de noticias
+- Estados personalizables por administradores
+- Sistema de activación/desactivación de estados
+- Control de visibilidad pública de estados
+- Seed automático de estados base al iniciar la aplicación
+- Soft delete para preservar integridad de datos
+
 ### 🏗️ **Arquitectura Sólida**
 - Patrón Repository con TypeORM
 - Inyección de dependencias
@@ -80,6 +89,7 @@ Esta es la API central del portafolio y blog profesional de **Víctor Trimpai**.
 - Usuario administrador por defecto
 - Gestión completa de roles y permisos
 - Sistema de workflow para noticias
+- Gestión centralizada de estados
 - Logs detallados del sistema
 
 ## 🔧 Tecnologías
@@ -214,6 +224,17 @@ Una vez que la aplicación esté ejecutándose, visita:
 | `PATCH` | `/rol/desactivate/:id` | Desactivar rol | ✅ | Administrador |
 | `DELETE` | `/rol/:id` | Eliminar rol | ✅ | Administrador |
 
+#### 🔄 Gestión de Estados (`/estados`)
+| Método | Endpoint | Descripción | Requiere Auth | Rol Requerido |
+|--------|----------|-------------|---------------|---------------|
+| `GET` | `/estados` | Listar todos los estados | ✅ | Admin/Editor |
+| `POST` | `/estados` | Crear nuevo estado | ✅ | Administrador |
+| `GET` | `/estados/:id` | Obtener estado por ID | ✅ | Admin/Editor |
+| `PATCH` | `/estados/:id` | Actualizar estado | ✅ | Administrador |
+| `PATCH` | `/estados/:id/desactivate` | Desactivar estado | ✅ | Administrador |
+| `PATCH` | `/estados/:id/reactivate` | Reactivar estado | ✅ | Administrador |
+| `DELETE` | `/estados/:id` | Eliminar estado (soft delete) | ✅ | Administrador |
+
 #### 📰 Gestión de Noticias (`/noticias`)
 | Método | Endpoint | Descripción | Requiere Auth | Rol Requerido |
 |--------|----------|-------------|---------------|---------------|
@@ -276,6 +297,80 @@ POST /auth/createUser
 }
 ```
 
+### Sistema de Estados
+
+#### 📊 **Estados Predefinidos**
+El sistema crea automáticamente los siguientes estados base:
+- **Pendiente de Revisión** (No público)
+- **Aprobado** (Público)
+- **Rechazado** (No público)
+- **Solicitud de Cambio** (No público)
+
+#### 🔄 **Crear Estado**
+```javascript
+POST /estados
+{
+  "nombre": "En Revisión Técnica",
+  "publica": false
+}
+
+// Respuesta
+{
+  "message": "✅ Estado creado exitosamente",
+  "data": {
+    "id": "uuid-del-estado",
+    "nombre": "En Revisión Técnica",
+    "publica": false,
+    "status": true,
+    "createdBy": "uuid-del-usuario"
+  }
+}
+```
+
+#### 🔍 **Obtener Estados**
+```javascript
+GET /estados
+// Respuesta
+{
+  "message": "✅ Listado de estados",
+  "data": [
+    {
+      "id": "uuid",
+      "nombre": "Pendiente de Revisión",
+      "publica": false,
+      "status": true,
+      "createdBy": "system"
+    },
+    {
+      "id": "uuid",
+      "nombre": "Aprobado",
+      "publica": true,
+      "status": true,
+      "createdBy": "system"
+    }
+  ]
+}
+```
+
+#### ⚙️ **Gestión de Estados**
+```javascript
+// Desactivar estado
+PATCH /estados/{id}/desactivate
+// Respuesta: "✅ Estado desactivado exitosamente"
+
+// Reactivar estado
+PATCH /estados/{id}/reactivate
+// Respuesta: "✅ Estado re-activado exitosamente"
+
+// Actualizar estado
+PATCH /estados/{id}
+{
+  "nombre": "Nuevo nombre",
+  "publica": true
+}
+// Respuesta: "✅ Estado actualizado exitosamente"
+```
+
 ### Sistema de Noticias
 
 #### 📝 **Crear Noticia**
@@ -319,16 +414,16 @@ GET /noticias
 ```
 
 #### 📊 **Estados de Noticias**
-Las noticias pasan por diferentes estados:
-- **Pendiente de revisión**: Estado inicial al crear una noticia
-- **En revisión**: Cuando está siendo revisada por un editor
+Las noticias utilizan el sistema de estados para su workflow:
+- **Pendiente de Revisión**: Estado inicial al crear una noticia
+- **En Revisión**: Cuando está siendo revisada por un editor
 - **Aprobada**: Lista para publicación
 - **Publicada**: Visible públicamente
 - **Rechazada**: Necesita correcciones
 
 #### 🔄 **Workflow de Noticias**
-1. **Creación**: Usuario crea noticia → Estado "pendiente de revisión"
-2. **Revisión**: Editor/Admin revisa → Aprueba o rechaza
+1. **Creación**: Usuario crea noticia → Estado "Pendiente de Revisión"
+2. **Revisión**: Editor/Admin revisa → Cambia a estado apropiado
 3. **Publicación**: Si está aprobada → Se puede publicar
 4. **Gestión**: Cambiar vigencia, desactivar o reactivar
 
@@ -362,6 +457,13 @@ src/
 │   ├── role.controller.ts
 │   ├── role.service.ts
 │   └── role.module.ts
+├── estados/               # Módulo de estados
+│   ├── estados.controller.ts
+│   ├── estados.service.ts
+│   ├── dto/
+│   │   ├── create-estado.dto.ts
+│   │   └── update-estado.dto.ts
+│   └── estados.module.ts
 ├── noticias/              # Módulo de noticias
 │   ├── noticias.controller.ts
 │   ├── noticias.service.ts
@@ -415,6 +517,14 @@ Al iniciar la aplicación por primera vez, se crea automáticamente:
 - **Contraseña**: La configurada en `DEFAULT_ADMIN_PASSWORD`
 - **Rol**: Administrador con todos los permisos
 
+### Estados Base
+
+Al iniciar la aplicación, se crean automáticamente los estados base necesarios para el workflow de noticias:
+- **Pendiente de Revisión** (No público)
+- **Aprobado** (Público)
+- **Rechazado** (No público)
+- **Solicitud de Cambio** (No público)
+
 > ⚠️ **Importante**: Cambia las credenciales por defecto después del primer login
 
 ## 🚢 Deployment
@@ -458,7 +568,8 @@ Al iniciar la aplicación por primera vez, se crea automáticamente:
 - 🔒 Mejorar medidas de seguridad
 - 🚀 Optimización de performance
 - 📰 Mejoras en el sistema de noticias
-- 🔄 Implementar sistema de notificaciones
+- 🔄 Mejoras en el sistema de estados
+- 📊 Implementar sistema de notificaciones
 - 🐛 Reportar y corregir bugs
 
 > **Nota**: Como el proyecto está en construcción, algunas funcionalidades pueden cambiar. ¡Mantente al día con los issues y discussions!

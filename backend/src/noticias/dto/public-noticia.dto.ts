@@ -3,6 +3,7 @@ export class PublicNoticiaDto {
     titulo: string;
     descripcion: string;
     visitas: number;
+    fechaCreacion: Date;
     usuario: {
         nombre: string;
     };
