@@ -85,7 +85,7 @@ export class AuthService {
         throw new ConflictException('⚠️ Ya existe un usuario con ese correo electrónico.');
       }
 
-      const rol = await this.rolRepository.findOne({ where: { nombre: 'Usuario' } });
+      const rol = await this.rolRepository.findOne({ where: { nombre: 'Invitado' } });
       if (!rol) {
         throw new NotFoundException('❌ Rol "Usuario" no encontrado en la base de datos.');
       }
