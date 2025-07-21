@@ -7,6 +7,7 @@ import { NoticiasModule } from './noticias/noticias.module';
 import { RevisionesModule } from './revisiones/revisiones.module';
 import { EstadosModule } from './estados/estados.module';
 import { CategoriaModule } from './categoria/categoria.module';
+import { CategoriaNoticiaModule } from './categoria-noticia/categoria-noticia.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { CategoriaModule } from './categoria/categoria.module';
     RevisionesModule,
     EstadosModule,
     CategoriaModule,
+    CategoriaNoticiaModule,
   ],
   controllers: [],
   providers: [],
