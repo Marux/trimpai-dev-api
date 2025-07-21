@@ -6,7 +6,7 @@ export class Categoria {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ length: 50 })
+  @Column({ length: 255, unique: true })
   nombre: string;
 
   @Column({ default: true })

@@ -42,6 +42,7 @@ Esta es la API central del portafolio y blog profesional de **Víctor Trimpai**.
 - **Sistema de Noticias**: Gestión completa de noticias con sistema de revisiones y estados
 - **Sistema de Usuarios**: Autenticación segura con roles y permisos
 - **Gestión de Estados**: Control centralizado de estados de workflow para noticias
+- **Sistema de Categorías**: Organización y clasificación de contenido
 - **API RESTful**: Endpoints bien documentados para integración con frontend
 
 ## ✨ Características
@@ -69,6 +70,24 @@ Esta es la API central del portafolio y blog profesional de **Víctor Trimpai**.
 - Soporte para imágenes, videos y párrafos estructurados
 - Categorización de noticias
 
+### 🏷️ **Sistema de Categorías**
+- Gestión completa de categorías para organizar noticias y contenido
+- Categorías predefinidas (Tecnología, IA, Noticias, Cultura)
+- Creación, edición y eliminación de categorías personalizadas
+- Activación/desactivación de categorías
+- Soft delete para preservar integridad referencial
+- Control de duplicados automático
+- Seed automático de categorías base
+- Restricciones de seguridad por roles
+
+### 📝 **Sistema de Revisiones**
+- Workflow completo de revisión de noticias
+- Asignación de estados mediante revisiones
+- Trazabilidad completa de cambios
+- Sistema de comentarios por revisión
+- Publicación automática según estado aplicado
+- Control de acceso por roles (Admin/Editor)
+
 ### 🔄 **Gestión de Estados**
 - Estados predefinidos para workflow de noticias
 - Estados personalizables por administradores
@@ -89,7 +108,7 @@ Esta es la API central del portafolio y blog profesional de **Víctor Trimpai**.
 - Usuario administrador por defecto
 - Gestión completa de roles y permisos
 - Sistema de workflow para noticias
-- Gestión centralizada de estados
+- Gestión centralizada de estados y categorías
 - Logs detallados del sistema
 
 ## 🔧 Tecnologías
@@ -235,6 +254,17 @@ Una vez que la aplicación esté ejecutándose, visita:
 | `PATCH` | `/estados/:id/reactivate` | Reactivar estado | ✅ | Administrador |
 | `DELETE` | `/estados/:id` | Eliminar estado (soft delete) | ✅ | Administrador |
 
+#### 🏷️ Gestión de Categorías (`/categoria`)
+| Método | Endpoint | Descripción | Requiere Auth | Rol Requerido |
+|--------|----------|-------------|---------------|---------------|
+| `GET` | `/categoria` | Listar todas las categorías activas | ✅ | Admin/Editor/Usuario |
+| `POST` | `/categoria` | Crear nueva categoría | ✅ | Administrador |
+| `GET` | `/categoria/:id` | Obtener categoría por ID | ✅ | Admin/Editor/Usuario |
+| `PATCH` | `/categoria/:id` | Actualizar categoría | ✅ | Administrador |
+| `PATCH` | `/categoria/:id/desactivate` | Desactivar categoría | ✅ | Administrador |
+| `PATCH` | `/categoria/:id/reactivate` | Reactivar categoría | ✅ | Administrador |
+| `DELETE` | `/categoria/:id` | Eliminar categoría (soft delete) | ✅ | Administrador |
+
 #### 📰 Gestión de Noticias (`/noticias`)
 | Método | Endpoint | Descripción | Requiere Auth | Rol Requerido |
 |--------|----------|-------------|---------------|---------------|
@@ -296,6 +326,103 @@ POST /auth/createUser
   "password": "password123"
 }
 ```
+
+### Sistema de Categorías
+
+#### 🏷️ **Categorías Predefinidas**
+El sistema crea automáticamente las siguientes categorías base:
+- **Tecnología**
+- **IA** (Inteligencia Artificial)
+- **Noticias**
+- **Cultura**
+
+#### ➕ **Crear Categoría**
+```javascript
+POST /categoria
+{
+  "nombre": "Desarrollo Web"
+}
+
+// Respuesta
+{
+  "message": "✅ Categoria creada exitosamente",
+  "data": {
+    "id": "uuid-de-la-categoria",
+    "nombre": "Desarrollo Web",
+    "status": true,
+    "isDeleted": false,
+    "createdBy": "uuid-del-usuario",
+    "createdAt": "2025-01-15T10:30:00.000Z",
+    "updatedAt": "2025-01-15T10:30:00.000Z"
+  }
+}
+```
+
+#### 📋 **Obtener Categorías**
+```javascript
+GET /categoria
+// Respuesta
+{
+  "message": "✅ Categorías obtenidas exitosamente",
+  "data": [
+    {
+      "id": "uuid",
+      "nombre": "Tecnología",
+      "status": true,
+      "isDeleted": false,
+      "createdBy": "system"
+    },
+    {
+      "id": "uuid",
+      "nombre": "IA",
+      "status": true,
+      "isDeleted": false,
+      "createdBy": "system"
+    }
+  ]
+}
+```
+
+#### ✏️ **Actualizar Categoría**
+```javascript
+PATCH /categoria/{id}
+{
+  "nombre": "Inteligencia Artificial Avanzada"
+}
+
+// Respuesta
+{
+  "message": "✅ Categoría actualizada exitosamente",
+  "data": {
+    "id": "uuid",
+    "nombre": "Inteligencia Artificial Avanzada",
+    "status": true,
+    "modifiedBy": "uuid-del-usuario"
+  }
+}
+```
+
+#### 🔄 **Gestión de Estados de Categorías**
+```javascript
+// Desactivar categoría
+PATCH /categoria/{id}/desactivate
+// Respuesta: "✅ Categoria desactivada exitosamente"
+
+// Reactivar categoría
+PATCH /categoria/{id}/reactivate
+// Respuesta: "✅ Categoria re-activada exitosamente"
+
+// Eliminar categoría (soft delete)
+DELETE /categoria/{id}
+// Respuesta: "✅ Categoría eliminada exitosamente"
+```
+
+#### ⚠️ **Validaciones y Restricciones**
+- No se pueden crear categorías con nombres duplicados
+- No se pueden actualizar categorías inactivas
+- Solo los administradores pueden crear, actualizar y eliminar categorías
+- Las categorías eliminadas utilizan soft delete para preservar integridad referencial
+- El nombre de la categoría es obligatorio y no puede estar vacío
 
 ### Sistema de Estados
 
@@ -379,7 +506,8 @@ POST /noticias
 {
   "titulo": "Mi primera noticia",
   "descripcion": "Descripción de la noticia",
-  "contenido": "Contenido completo de la noticia..."
+  "contenido": "Contenido completo de la noticia...",
+  "categorias": ["uuid-categoria-1", "uuid-categoria-2"]
 }
 
 // Respuesta
@@ -405,7 +533,12 @@ GET /noticias
         "nombre": "Víctor Trimpai"
       },
       "imagenes": [...],
-      "categorias": [...],
+      "categorias": [
+        {
+          "id": "uuid",
+          "nombre": "Tecnología"
+        }
+      ],
       "parrafos": [...],
       "videos": [...]
     }
@@ -423,9 +556,10 @@ Las noticias utilizan el sistema de estados para su workflow:
 
 #### 🔄 **Workflow de Noticias**
 1. **Creación**: Usuario crea noticia → Estado "Pendiente de Revisión"
-2. **Revisión**: Editor/Admin revisa → Cambia a estado apropiado
-3. **Publicación**: Si está aprobada → Se puede publicar
-4. **Gestión**: Cambiar vigencia, desactivar o reactivar
+2. **Categorización**: Se asignan categorías apropiadas
+3. **Revisión**: Editor/Admin revisa → Cambia a estado apropiado
+4. **Publicación**: Si está aprobada → Se puede publicar
+5. **Gestión**: Cambiar vigencia, desactivar o reactivar
 
 > **Nota**: Los nuevos usuarios se crean automáticamente con rol "Usuario"
 
@@ -464,6 +598,13 @@ src/
 │   │   ├── create-estado.dto.ts
 │   │   └── update-estado.dto.ts
 │   └── estados.module.ts
+├── categoria/             # Módulo de categorías
+│   ├── categoria.controller.ts
+│   ├── categoria.service.ts
+│   ├── dto/
+│   │   ├── create-categoria.dto.ts
+│   │   └── update-categoria.dto.ts
+│   └── categoria.module.ts
 ├── noticias/              # Módulo de noticias
 │   ├── noticias.controller.ts
 │   ├── noticias.service.ts
@@ -478,7 +619,8 @@ src/
 │   ├── Login.entity.ts
 │   ├── Noticia.entity.ts
 │   ├── Revision.entity.ts
-│   └── Estado.entity.ts
+│   ├── Estado.entity.ts
+│   └── Categoria.entity.ts
 ├── decorators/            # Decoradores personalizados
 │   ├── user.decorator.ts
 │   ├── roles.decorator.ts
@@ -517,15 +659,21 @@ Al iniciar la aplicación por primera vez, se crea automáticamente:
 - **Contraseña**: La configurada en `DEFAULT_ADMIN_PASSWORD`
 - **Rol**: Administrador con todos los permisos
 
-### Estados Base
+### Estados y Categorías Base
 
-Al iniciar la aplicación, se crean automáticamente los estados base necesarios para el workflow de noticias:
+Al iniciar la aplicación, se crean automáticamente:
+
+#### **Estados Base**
 - **Pendiente de Revisión** (No público)
 - **Aprobado** (Público)
 - **Rechazado** (No público)
 - **Solicitud de Cambio** (No público)
 
-> ⚠️ **Importante**: Cambia las credenciales por defecto después del primer login
+#### **Categorías Base**
+- **Tecnología**
+- **IA** (Inteligencia Artificial)
+- **Noticias**
+- **Cultura**
 
 ## 🚢 Deployment
 
@@ -569,6 +717,7 @@ Al iniciar la aplicación, se crean automáticamente los estados base necesarios
 - 🚀 Optimización de performance
 - 📰 Mejoras en el sistema de noticias
 - 🔄 Mejoras en el sistema de estados
+- 🏷️ Mejoras en el sistema de categorías
 - 📊 Implementar sistema de notificaciones
 - 🐛 Reportar y corregir bugs
 

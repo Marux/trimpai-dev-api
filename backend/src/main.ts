@@ -62,8 +62,6 @@ class Application {
     · LinkedIn: https://www.linkedin.com/in/victor-trimpai-dev/
   `)
       .setVersion('1.0')
-      // .addTag('Projects', 'Endpoints para proyectos destacados')
-      // .addTag('Blog', 'Publicaciones técnicas y experiencias')
       .addTag('Auth', 'Autenticación y gestión de usuarios')
       .addTag('Rol', 'Roles y permisos')
       .build();
