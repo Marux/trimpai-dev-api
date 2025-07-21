@@ -6,6 +6,7 @@ import { AuthModule } from './authService/auth.module';
 import { NoticiasModule } from './noticias/noticias.module';
 import { RevisionesModule } from './revisiones/revisiones.module';
 import { EstadosModule } from './estados/estados.module';
+import { CategoriaModule } from './categoria/categoria.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { EstadosModule } from './estados/estados.module';
     NoticiasModule,
     RevisionesModule,
     EstadosModule,
+    CategoriaModule,
   ],
   controllers: [],
   providers: [],
