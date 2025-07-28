@@ -9,7 +9,7 @@ import * as bcrypt from 'bcryptjs';
 import Utils from '../utils/error.utils';
 import { CreateUsuarioDto } from '../dto/create-user.dto';
 import { UpdateUsuarioDto } from '../dto/update-user.dto';
-import { Rol } from 'src/entities/Rol.entity';
+import { Rol } from '../entities/Rol.entity';
 import { EncryptionService } from '../common/encryption.service';
 
 @Injectable()

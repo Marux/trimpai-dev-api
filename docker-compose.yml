@@ -1,14 +1,15 @@
-version: "3.8"
 
 services:
   mysql_db:
     image: mysql:8.0
     container_name: mysql_db
+    env_file:
+      - .env
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: db_crud
-      MYSQL_USER: user_crud
-      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD:  ${DB_PASSWORD} # root
+      MYSQL_DATABASE: ${DB_DATABASE} # db_crud
+      MYSQL_USER: ${DB_USERNAME} # user_crud
+      MYSQL_PASSWORD: ${DB_PASSWORD} # root
     volumes:
       - ./mysql:/var/lib/mysql  # Datos persistentes
     ports:
@@ -32,7 +33,7 @@ services:
       - ./backend:/usr/src/app  # Montar solo el backend
       - /usr/src/app/node_modules
     env_file:
-      - ./backend/.env
+      - .env
     environment:
       - NODE_ENV=development
       - DB_HOST=mysql_db

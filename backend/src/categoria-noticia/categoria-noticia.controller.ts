@@ -14,7 +14,7 @@ export class CategoriaNoticiaController {
   constructor(private readonly categoriaNoticiaService: CategoriaNoticiaService) { }
 
   @Post()
-  @Roles('Administrador', 'Usuario', 'Editor')
+  @Roles('Administrador')
   create(@Body() createCategoriaNoticiaDto: CreateCategoriaNoticiaDto, @User() user: JwtPayload) {
     return this.categoriaNoticiaService.create(createCategoriaNoticiaDto, user.sub);
   }
@@ -27,5 +27,4 @@ export class CategoriaNoticiaController {
   ) {
     return this.categoriaNoticiaService.updateCategorias(dto, user.sub);
   }
-
 }
