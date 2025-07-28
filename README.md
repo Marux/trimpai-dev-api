@@ -43,6 +43,7 @@ Esta es la API central del portafolio y blog profesional de **Víctor Trimpai**.
 - **Sistema de Usuarios**: Autenticación segura con roles y permisos
 - **Gestión de Estados**: Control centralizado de estados de workflow para noticias
 - **Sistema de Categorías**: Organización y clasificación de contenido
+- **Gestión de Párrafos**: Sistema modular para contenido estructurado
 - **API RESTful**: Endpoints bien documentados para integración con frontend
 
 ## ✨ Características
@@ -69,6 +70,15 @@ Esta es la API central del portafolio y blog profesional de **Víctor Trimpai**.
 - Soft delete para preservar datos
 - Soporte para imágenes, videos y párrafos estructurados
 - Categorización de noticias
+
+### ✏️ **Sistema de Párrafos**
+- Gestión modular de contenido por párrafos
+- Orden automático de párrafos dentro de noticias
+- Vinculación directa con noticias específicas
+- Control de estados (activo/inactivo)
+- Soft delete para preservar integridad referencial
+- Transformación de datos con DTOs
+- Control de acceso por roles
 
 ### 🏷️ **Sistema de Categorías**
 - Gestión completa de categorías para organizar noticias y contenido
@@ -278,6 +288,17 @@ Una vez que la aplicación esté ejecutándose, visita:
 | `PATCH` | `/noticias/:id/reactivate` | Reactivar noticia | ✅ | Admin/Editor |
 | `PATCH` | `/noticias/:id/vigencia` | Cambiar vigencia | ✅ | Admin/Editor |
 | `DELETE` | `/noticias/:id` | Eliminar noticia (soft delete) | ✅ | Administrador |
+
+#### ✏️ Gestión de Párrafos (`/create-paragraphs`)
+| Método | Endpoint | Descripción | Requiere Auth | Rol Requerido |
+|--------|----------|-------------|---------------|---------------|
+| `GET` | `/create-paragraphs` | Listar todos los párrafos | ✅ | Admin/Editor/Usuario |
+| `POST` | `/create-paragraphs/:id` | Crear párrafo en noticia específica | ✅ | Admin/Editor/Usuario |
+| `GET` | `/create-paragraphs/:id` | Obtener párrafo por ID | ✅ | Admin/Editor/Usuario |
+| `PATCH` | `/create-paragraphs/:id` | Actualizar párrafo | ✅ | Admin/Editor/Usuario |
+| `PATCH` | `/create-paragraphs/:id/desactivate` | Desactivar párrafo | ✅ | Administrador |
+| `PATCH` | `/create-paragraphs/:id/reactivate` | Reactivar párrafo | ✅ | Administrador |
+| `DELETE` | `/create-paragraphs/:id` | Eliminar párrafo (soft delete) | ✅ | Administrador |
 
 ### Autenticación
 
@@ -561,6 +582,79 @@ Las noticias utilizan el sistema de estados para su workflow:
 4. **Publicación**: Si está aprobada → Se puede publicar
 5. **Gestión**: Cambiar vigencia, desactivar o reactivar
 
+### Sistema de Párrafos
+
+#### ✏️ **Crear Párrafo en Noticia**
+```javascript
+POST /create-paragraphs/{noticia-id}
+{
+  "contenido": "Este es el contenido del párrafo...",
+  "tipo": "texto" // opcional
+}
+
+// Respuesta
+{
+  "message": "✅ Párrafo creado exitosamente"
+}
+```
+
+#### 📋 **Obtener Párrafos**
+```javascript
+GET /create-paragraphs
+// Respuesta
+{
+  "message": "✅ Párrafos encontrados exitosamente",
+  "data": [
+    {
+      "id": "uuid",
+      "contenido": "Contenido del párrafo",
+      "orden": 1,
+      "status": true,
+      "noticia": {
+        "id": "uuid",
+        "titulo": "Título de la noticia"
+      }
+    }
+  ]
+}
+```
+
+#### ✏️ **Actualizar Párrafo**
+```javascript
+PATCH /create-paragraphs/{id}
+{
+  "contenido": "Contenido actualizado del párrafo"
+}
+
+// Respuesta
+{
+  "message": "✅ Párrafo actualizado exitosamente"
+}
+```
+
+#### 🔄 **Gestión de Estados de Párrafos**
+```javascript
+// Desactivar párrafo
+PATCH /create-paragraphs/{id}/desactivate
+// Respuesta: "✅ Párrafo desactivado exitosamente"
+
+// Reactivar párrafo
+PATCH /create-paragraphs/{id}/reactivate
+// Respuesta: "✅ Párrafo reactivado exitosamente"
+
+// Eliminar párrafo (soft delete)
+DELETE /create-paragraphs/{id}
+// Respuesta: "✅ Párrafo eliminado exitosamente"
+```
+
+#### ⚠️ **Características del Sistema de Párrafos**
+- **Orden automático**: Los párrafos se ordenan automáticamente al crearlos
+- **Vinculación a noticias**: Cada párrafo pertenece a una noticia específica
+- **Soft delete**: Los párrafos eliminados se marcan como eliminados sin borrar la información
+- **Control de estados**: Los párrafos pueden ser activados/desactivados
+- **Gestión por roles**: Solo administradores pueden desactivar/reactivar/eliminar párrafos
+- **Transformación de datos**: Las respuestas utilizan DTOs para controlar la información expuesta
+
 > **Nota**: Los nuevos usuarios se crean automáticamente con rol "Usuario"
 
 ## 🧪 Testing
@@ -613,11 +707,20 @@ src/
 │   │   ├── update-noticia.dto.ts
 │   │   └── public-noticia.dto.ts
 │   └── noticias.module.ts
+├── create-paragraphs/     # Módulo de párrafos
+│   ├── create-paragraphs.controller.ts
+│   ├── create-paragraphs.service.ts
+│   ├── dto/
+│   │   ├── create-create-paragraph.dto.ts
+│   │   ├── update-create-paragraph.dto.ts
+│   │   └── parrafo-response.dto.ts
+│   └── create-paragraphs.module.ts
 ├── entities/              # Entidades de base de datos
 │   ├── Usuario.entity.ts
 │   ├── Rol.entity.ts
 │   ├── Login.entity.ts
 │   ├── Noticia.entity.ts
+│   ├── Parrafo.entity.ts
 │   ├── Revision.entity.ts
 │   ├── Estado.entity.ts
 │   └── Categoria.entity.ts
@@ -718,6 +821,7 @@ Al iniciar la aplicación, se crean automáticamente:
 - 📰 Mejoras en el sistema de noticias
 - 🔄 Mejoras en el sistema de estados
 - 🏷️ Mejoras en el sistema de categorías
+- ✏️ Mejoras en el sistema de párrafos
 - 📊 Implementar sistema de notificaciones
 - 🐛 Reportar y corregir bugs
 
