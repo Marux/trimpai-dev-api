@@ -6,6 +6,9 @@ export class Parrafo {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column()
+  orden: number;
+
   @Column('text')
   texto: string;
 

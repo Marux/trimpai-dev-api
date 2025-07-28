@@ -8,6 +8,7 @@ import { RevisionesModule } from './revisiones/revisiones.module';
 import { EstadosModule } from './estados/estados.module';
 import { CategoriaModule } from './categoria/categoria.module';
 import { CategoriaNoticiaModule } from './categoria-noticia/categoria-noticia.module';
+import { CreateParagraphsModule } from './create-paragraphs/create-paragraphs.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { CategoriaNoticiaModule } from './categoria-noticia/categoria-noticia.mo
     EstadosModule,
     CategoriaModule,
     CategoriaNoticiaModule,
+    CreateParagraphsModule,
   ],
   controllers: [],
   providers: [],
