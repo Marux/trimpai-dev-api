@@ -217,24 +217,33 @@ export class RolService implements OnModuleInit {
         }
     }
 
-    async inactiveRol(id: string, modifiedBy: string): Promise<{ message: string; }> {
+    async inactiveRol(id: string, modifiedBy: string): Promise<{ message: string }> {
         try {
-            const rolResponse = await this.getById(id);
-            const rol = rolResponse.data;
+            const rol = await this.rolRepository.findOneBy({ id });
+
+            if (!rol || rol.isDeleted) {
+                throw new NotFoundException('❌ Rol no encontrado o ya fue eliminado.');
+            }
+
+            if (!rol.status) {
+                throw new ConflictException('⚠️ Este rol ya está inactivo.');
+            }
 
             rol.status = false;
             rol.modifiedBy = modifiedBy;
+            rol.dateModified = new Date();
 
             await this.rolRepository.save(rol);
 
             return {
-                message: 'Rol desactivado con éxito',
+                message: '✅ Rol desactivado con éxito.',
             };
 
         } catch (error) {
             return Utils.errorResponse(error);
         }
     }
+
 
 
     async deleteRol(id: string, modifiedBy: string): Promise<{ message: string; }> {
