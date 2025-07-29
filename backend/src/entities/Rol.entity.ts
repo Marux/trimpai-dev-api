@@ -14,7 +14,7 @@ export class Rol {
   id: string;
 
   @Column({ length: 100, unique: true })
-  nombre: string;  
+  name: string;  
 
   @Column({ default: true })
   status: boolean; // Activo (true) o Inactivo (false)

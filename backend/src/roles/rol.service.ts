@@ -39,17 +39,17 @@ export class RolService implements OnModuleInit {
         ];
 
         const existingRoles = await this.rolRepository.findBy({
-            nombre: In(requiredRoles)
+            name: In(requiredRoles)
         });
 
-        const existingRoleNames = existingRoles.map(r => r.nombre);
+        const existingRoleNames = existingRoles.map(r => r.name);
         const missingRoles = requiredRoles.filter(name => !existingRoleNames.includes(name));
 
         for (const roleName of missingRoles) {
             await this.createRoleIfNotExists(roleName);
         }
 
-        const adminRol = await this.rolRepository.findOneBy({ nombre: this.ADMIN_ROL_NAME });
+        const adminRol = await this.rolRepository.findOneBy({ name: this.ADMIN_ROL_NAME });
         if (!adminRol) {
             throw new Error('No se pudo crear ni encontrar el rol de administrador.');
         }
@@ -59,14 +59,14 @@ export class RolService implements OnModuleInit {
     }
 
     private async createRoleIfNotExists(roleName: string): Promise<void> {
-        const existing = await this.rolRepository.findOneBy({ nombre: roleName });
+        const existing = await this.rolRepository.findOneBy({ name: roleName });
         if (existing) {
             this.logger.log(`🔎 [RolService] Rol "${roleName}" ya existe, no se creará de nuevo.`);
             return;
         }
 
         const dto = {
-            nombre: roleName,
+            name: roleName,
             createdBy: this.SYSTEM_USER_ID,
         };
 
@@ -101,13 +101,13 @@ export class RolService implements OnModuleInit {
 
     private async verifyAdminUser(): Promise<void> {
         const adminUser = await this.usuarioRepository.findOne({
-            where: { rol: { nombre: this.ADMIN_ROL_NAME } },
+            where: { rol: { name: this.ADMIN_ROL_NAME } },
             relations: ['rol']
         });
 
         if (!adminUser) {
             this.logger.log('⚠️ [RolService] No se encontró usuario administrador. Creando uno por defecto...');
-            const adminRol = await this.rolRepository.findOneBy({ nombre: this.ADMIN_ROL_NAME });
+            const adminRol = await this.rolRepository.findOneBy({ name: this.ADMIN_ROL_NAME });
             if (!adminRol) {
                 throw new NotFoundException('⚠️ Rol "Administrador" no encontrado, no se puede crear el usuario admin.');
             }
@@ -138,7 +138,7 @@ export class RolService implements OnModuleInit {
             }
 
             const rol = this.rolRepository.create({
-                nombre: dto.nombre,
+                name: dto.name,
                 createdBy: createdBy,
             });
 
@@ -150,7 +150,7 @@ export class RolService implements OnModuleInit {
         } catch (error) {
             if (error.code === 'ER_DUP_ENTRY') {
                 throw new ConflictException(
-                    `⚠️ Ya existe un rol con el nombre "${dto.nombre}".`
+                    `⚠️ Ya existe un rol con el nombre "${dto.name}".`
                 );
             }
             return Utils.errorResponse(error);
@@ -191,14 +191,14 @@ export class RolService implements OnModuleInit {
 
     async updateRol(id: string, dto: UpdateRolDto): Promise<{ message: string; data: Rol }> {
         try {
-            if (!dto.nombre || dto.nombre.trim() === '') {
+            if (!dto.name || dto.name.trim() === '') {
                 throw new BadRequestException('⚠️ Debes proporcionar un nuevo nombre para actualizar el rol.');
             }
 
             const rolResponse = await this.getById(id);
             const rol = rolResponse.data;
 
-            if (dto.nombre) rol.nombre = dto.nombre;
+            if (dto.name) rol.name = dto.name;
             if (dto.modifiedBy) rol.modifiedBy = dto.modifiedBy;
 
             const updatedRol = await this.rolRepository.save(rol);
@@ -210,7 +210,7 @@ export class RolService implements OnModuleInit {
         } catch (error) {
             if (error.code === 'ER_DUP_ENTRY') {
                 throw new ConflictException(
-                    `⚠️ Ya existe un rol con el nombre "${dto.nombre}".`
+                    `⚠️ Ya existe un rol con el nombre "${dto.name}".`
                 );
             }
             return Utils.errorResponse(error);
@@ -242,7 +242,7 @@ export class RolService implements OnModuleInit {
             const rolResponse = await this.getById(id);
             const rol = rolResponse.data;
 
-            rol.nombre = `${rol.nombre}_Delete_${id}`;
+            rol.name = `${rol.name}_Delete_${id}`;
 
             rol.isDeleted = true;
             rol.status = false;
