@@ -9,6 +9,7 @@ import { EstadosModule } from './estados/estados.module';
 import { CategoriaModule } from './categoria/categoria.module';
 import { CategoriaNoticiaModule } from './categoria-noticia/categoria-noticia.module';
 import { CreateParagraphsModule } from './create-paragraphs/create-paragraphs.module';
+import { CreateImageModule } from './create-image/create-image.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { CreateParagraphsModule } from './create-paragraphs/create-paragraphs.mo
     CategoriaModule,
     CategoriaNoticiaModule,
     CreateParagraphsModule,
+    CreateImageModule,
   ],
   controllers: [],
   providers: [],

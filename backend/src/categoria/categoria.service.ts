@@ -125,6 +125,7 @@ export class CategoriaService {
 
       categoria.nombre = updateCategoriaDto.nombre;
       categoria.modifiedBy = usuarioId;
+      categoria.dateModified = new Date();
 
       await this.categoriaRepository.save(categoria);
       return {
@@ -155,6 +156,7 @@ export class CategoriaService {
 
       categoria.status = false;
       categoria.modifiedBy = usuarioId;
+      categoria.dateModified = new Date();
 
       await this.categoriaRepository.save(categoria);
 
@@ -180,6 +182,7 @@ export class CategoriaService {
 
       categoria.status = true;
       categoria.modifiedBy = usuarioId;
+      categoria.dateModified = new Date();
 
       await this.categoriaRepository.save(categoria);
 
@@ -204,6 +207,7 @@ export class CategoriaService {
       categoria.status = false;
       categoria.isDeleted = true;
       categoria.modifiedBy = usuarioId;
+      categoria.dateModified = new Date();
 
       await this.categoriaRepository.save(categoria);
 

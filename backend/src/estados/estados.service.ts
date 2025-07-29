@@ -118,7 +118,7 @@ export class EstadosService {
       estado.nombre = updateEstadoDto.nombre ?? estado.nombre;
       estado.publica = updateEstadoDto.publica ?? estado.publica;
       estado.modifiedBy = usuarioId;
-
+      estado.dateModified = new Date();
       await this.estadoRepository.save(estado);
 
       return {
@@ -150,6 +150,7 @@ export class EstadosService {
 
       estado.status = false;
       estado.modifiedBy = usuarioId;
+      estado.dateModified = new Date();
 
       await this.estadoRepository.save(estado);
 
@@ -175,6 +176,7 @@ export class EstadosService {
 
       estado.status = true;
       estado.modifiedBy = usuarioId;
+      estado.dateModified = new Date();
 
       await this.estadoRepository.save(estado);
 
