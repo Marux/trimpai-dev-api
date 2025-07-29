@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, DefaultValuePipe, ParseIntPipe } from '@nestjs/common';
+import { Throttle, seconds } from '@nestjs/throttler'; // Importa Throttle y seconds
 import { NoticiasService } from './noticias.service';
 import { CreateNoticiaDto } from './dto/create-noticia.dto';
 import { UpdateNoticiaDto } from './dto/update-noticia.dto';
@@ -24,6 +25,7 @@ export class NoticiasController {
     return await this.noticiasService.create(createNoticiaDto, user.sub);
   }
 
+  @Throttle({ default: { limit: 30, ttl: seconds(30) } }) // Permite 30 solicitudes en 30 segundos
   @Get()
   @Public()
   async findAllPublic(

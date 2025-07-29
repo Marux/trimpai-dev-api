@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { CustomThrottlerGuard } from './authService/guards/custom-throttler.guard'; 
 import { RoleServiceModule } from './roles/role.module';
 import { AuthModule } from './authService/auth.module';
 import { NoticiasModule } from './noticias/noticias.module';
@@ -13,7 +16,7 @@ import { CreateImageModule } from './create-image/create-image.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),  // Habilita las variables de entorno
+    ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
       type: "mysql",
       host: process.env.DB_HOST,
@@ -25,6 +28,10 @@ import { CreateImageModule } from './create-image/create-image.module';
       autoLoadEntities: true,
       synchronize: true,
     }),
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 10,
+    }]),
     RoleServiceModule,
     AuthModule,
     NoticiasModule,
@@ -36,6 +43,11 @@ import { CreateImageModule } from './create-image/create-image.module';
     CreateImageModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: CustomThrottlerGuard,
+    },
+  ],
 })
-export class AppModule {}
+export class AppModule { }
