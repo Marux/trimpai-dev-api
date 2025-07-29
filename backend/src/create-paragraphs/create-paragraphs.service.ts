@@ -56,6 +56,7 @@ export class CreateParagraphsService {
   async findAll(): Promise<{ message: string; data: ParrafoResponseDto[] }> {
     try {
       const paragraphs = await this.parrafoRepository.find({
+        where: { isDeleted: false },
         relations: ['noticia'],
       });
 
@@ -75,7 +76,7 @@ export class CreateParagraphsService {
   async findOne(id: string): Promise<{ message: string; data: ParrafoResponseDto }> {
     try {
       const paragraph = await this.parrafoRepository.findOne({
-        where: { id },
+        where: { id, isDeleted: false },
         relations: ['noticia'],
       });
 
@@ -99,7 +100,7 @@ export class CreateParagraphsService {
 
   async update(id: string, updateCreateParagraphDto: UpdateCreateParagraphDto, usuarioId: string) {
     try {
-      const paragraph = await this.parrafoRepository.findOne({ where: { id } });
+      const paragraph = await this.parrafoRepository.findOne({ where: { id, isDeleted: false } });
 
       if (!paragraph) {
         throw new NotFoundException('❌ El párrafo no existe.');
@@ -107,6 +108,7 @@ export class CreateParagraphsService {
 
       Object.assign(paragraph, updateCreateParagraphDto);
       paragraph.modifiedBy = usuarioId;
+      paragraph.dateModified = new Date();
 
       await this.parrafoRepository.save(paragraph);
 
@@ -117,9 +119,10 @@ export class CreateParagraphsService {
       return Utils.errorResponse(error);
     }
   }
+
   async desactivate(id: string, usuarioId: string): Promise<{ message: string }> {
     try {
-      const paragraph = await this.parrafoRepository.findOne({ where: { id } });
+      const paragraph = await this.parrafoRepository.findOne({ where: { id, isDeleted: false } });
 
       if (!paragraph || paragraph.isDeleted) {
         throw new NotFoundException('❌ El párrafo no existe.');
@@ -131,6 +134,7 @@ export class CreateParagraphsService {
 
       paragraph.status = false;
       paragraph.modifiedBy = usuarioId;
+      paragraph.dateModified = new Date();
 
       await this.parrafoRepository.save(paragraph);
 
@@ -144,7 +148,7 @@ export class CreateParagraphsService {
 
   async reactivate(id: string, usuarioId: string): Promise<{ message: string }> {
     try {
-      const paragraph = await this.parrafoRepository.findOne({ where: { id } });
+      const paragraph = await this.parrafoRepository.findOne({ where: { id, isDeleted: false } });
 
       if (!paragraph || paragraph.isDeleted) {
         throw new NotFoundException('❌ El párrafo no existe.');
@@ -156,13 +160,14 @@ export class CreateParagraphsService {
 
       paragraph.status = true;
       paragraph.modifiedBy = usuarioId;
+      paragraph.dateModified = new Date();
 
       await this.parrafoRepository.save(paragraph);
 
       return {
         message: '✅ Párrafo reactivado exitosamente',
       };
-      
+
     } catch (error) {
       return Utils.errorResponse(error);
     }
@@ -170,7 +175,7 @@ export class CreateParagraphsService {
 
   async remove(id: string, usuarioId: string) {
     try {
-      const paragraph = await this.parrafoRepository.findOneBy({ id });
+      const paragraph = await this.parrafoRepository.findOneBy({ id, isDeleted: false });
 
       if (!paragraph || paragraph.isDeleted) {
         throw new NotFoundException('❌ El párrafo no existe.');
@@ -179,13 +184,14 @@ export class CreateParagraphsService {
       paragraph.status = false;
       paragraph.isDeleted = true;
       paragraph.modifiedBy = usuarioId;
+      paragraph.dateModified = new Date();
 
       await this.parrafoRepository.save(paragraph);
 
       return {
         message: '✅ Párrafo eliminado exitosamente',
       };
-      
+
     } catch (error) {
       return Utils.errorResponse(error);
     }
