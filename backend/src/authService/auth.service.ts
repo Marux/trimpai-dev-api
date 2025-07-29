@@ -60,7 +60,7 @@ export class AuthService {
       const payload = {
         sub: user.id,
         email: user.email,
-        rol: user.rol?.nombre || 'user'
+        rol: user.rol?.name || 'user'
       };
 
       // Registrar el intento de login
@@ -85,7 +85,7 @@ export class AuthService {
         throw new ConflictException('⚠️ Ya existe un usuario con ese correo electrónico.');
       }
 
-      const rol = await this.rolRepository.findOne({ where: { nombre: 'Invitado' } });
+      const rol = await this.rolRepository.findOne({ where: { name: 'Invitado' } });
       if (!rol) {
         throw new NotFoundException('❌ Rol "Usuario" no encontrado en la base de datos.');
       }
@@ -138,7 +138,7 @@ export class AuthService {
           nombre: user.nombre,
           email: user.email,
           run: runVisible,
-          rol: user.rol?.nombre || null,
+          rol: user.rol?.name || null,
           dateCreated: user.dateCreated,
           dateModified: user.dateModified,
           status: user.status,
@@ -185,7 +185,7 @@ export class AuthService {
           nombre: user.nombre,
           email: user.email,
           run: runVisible,
-          rol: user.rol?.nombre || null,
+          rol: user.rol?.name || null,
           dateCreated: user.dateCreated,
           dateModified: user.dateModified,
           status: user.status,
@@ -312,7 +312,7 @@ export class AuthService {
         id: user.id,
         nombre: user.nombre,
         email: user.email,
-        rol: user.rol?.nombre ?? 'Sin rol',
+        rol: user.rol?.name ?? 'Sin rol',
       };
     } catch (error) {
       return Utils.errorResponse(error);

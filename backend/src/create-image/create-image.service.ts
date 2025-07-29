@@ -37,7 +37,7 @@ export class CreateImageService {
         message: '✅ Imagen creada exitosamente',
       };
     } catch (error) {
-      Utils.errorResponse(error);
+      return Utils.errorResponse(error);
     }
   }
 
@@ -61,14 +61,14 @@ export class CreateImageService {
     }
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<{ message: string; data: ImageResponseDto }> {
     try {
       const image = await this.imagenRepository.findOne({
         where: { id, isDeleted: false },
         relations: ['noticia'],
       });
 
-      if (!image || image.isDeleted) {
+      if (!image) {
         throw new NotFoundException('❌ Imagen no encontrada.');
       }
 
@@ -87,7 +87,7 @@ export class CreateImageService {
   async update(id: string, updateCreateImageDto: UpdateCreateImageDto, usuarioId: string) {
     try {
       const image = await this.imagenRepository.findOneBy({ id, isDeleted: false });
-      if (!image || image.isDeleted) {
+      if (!image) {
         throw new NotFoundException('❌ Imagen no encontrada.');
       }
 
@@ -117,7 +117,7 @@ export class CreateImageService {
   async desactivate(id: string, usuarioId: string): Promise<{ message: string }> {
     try {
       const image = await this.imagenRepository.findOneBy({ id, isDeleted: false });
-      if (!image || image.isDeleted) {
+      if (!image) {
         throw new NotFoundException('❌ Imagen no encontrada.');
       }
 
@@ -141,7 +141,7 @@ export class CreateImageService {
   async reactivate(id: string, usuarioId: string): Promise<{ message: string }> {
     try {
       const image = await this.imagenRepository.findOneBy({ id, isDeleted: false });
-      if (!image || image.isDeleted) {
+      if (!image) {
         throw new NotFoundException('❌ Imagen no encontrada.');
       }
       if (image.status === true) {
@@ -165,7 +165,7 @@ export class CreateImageService {
   async remove(id: string, usuarioId: string): Promise<{ message: string }> {
     try {
       const image = await this.imagenRepository.findOneBy({ id, isDeleted: false });
-      if (!image || image.isDeleted) {
+      if (!image) {
         throw new NotFoundException('❌ Imagen no encontrada.');
       }
 
