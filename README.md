@@ -54,6 +54,10 @@ Esta es la API central del portafolio y blog profesional de **Víctor Trimpai**.
 - Encriptación de contraseñas con bcrypt
 - Validación de datos con class-validator
 - CORS habilitado para frontend
+- **🛡️ Rate Limiting Global**: Protección contra ataques de fuerza bruta y spam
+  - Límite de 10 solicitudes por minuto por IP
+  - Respuestas personalizadas en español
+  - Guard personalizado con manejo de excepciones
 
 ### 👥 **Gestión de Usuarios**
 - Registro y login de usuarios
@@ -129,6 +133,7 @@ Esta es la API central del portafolio y blog profesional de **Víctor Trimpai**.
 | **Base de Datos** | MySQL, TypeORM |
 | **Autenticación** | JWT, bcrypt, Passport |
 | **Validación** | class-validator, class-transformer |
+| **Seguridad** | ThrottlerModule (Rate Limiting) |
 | **Documentación** | Swagger/OpenAPI |
 | **Contenedores** | Docker, Docker Compose |
 | **Herramientas** | pnpm, ESLint, Prettier |
@@ -234,71 +239,102 @@ Una vez que la aplicación esté ejecutándose, visita:
 - **Documentación interactiva**: `http://localhost:3000/docs`
 - **Redirección automática**: `http://localhost:3000/` → `/docs`
 
+### 🛡️ Rate Limiting
+
+La API implementa un sistema de rate limiting global para proteger contra ataques y abuso:
+
+#### **⚡ Configuración Actual**
+- **Límite**: 10 solicitudes por minuto por dirección IP
+- **Ventana de tiempo**: 60 segundos (1 minuto)
+- **Aplicación**: Global (todos los endpoints)
+
+#### **📝 Respuesta de Rate Limiting**
+Cuando se supera el límite, la API responde con:
+```json
+{
+  "statusCode": 429,
+  "message": "Has superado el límite de solicitudes. Por favor, intenta más tarde.",
+  "error": "Demasiadas solicitudes"
+}
+```
+
+#### **🔧 Headers de Rate Limiting**
+La API incluye headers informativos:
+- `X-RateLimit-Limit`: Límite máximo de solicitudes
+- `X-RateLimit-Remaining`: Solicitudes restantes en la ventana actual
+- `X-RateLimit-Reset`: Timestamp cuando se resetea la ventana
+
+#### **💡 Recomendaciones para Desarrolladores**
+- Implementa retry logic con backoff exponencial
+- Cachea respuestas cuando sea posible
+- Monitorea los headers de rate limiting
+- Considera usar paginación para endpoints que retornan muchos datos
+
 ### Endpoints Principales
 
 #### 🔐 Autenticación (`/auth`)
-| Método | Endpoint | Descripción | Requiere Auth | Rol Requerido |
-|--------|----------|-------------|---------------|---------------|
-| `POST` | `/auth/login` | Iniciar sesión | ❌ | - |
-| `POST` | `/auth/logout` | Cerrar sesión | ❌ | - |
-| `POST` | `/auth/createUser` | Registrar nuevo usuario | ❌ | - |
+| Método | Endpoint | Descripción | Requiere Auth | Rol Requerido | Rate Limit |
+|--------|----------|-------------|---------------|---------------|------------|
+| `POST` | `/auth/login` | Iniciar sesión | ❌ | - | ✅ 10/min |
+| `POST` | `/auth/logout` | Cerrar sesión | ❌ | - | ✅ 10/min |
+| `POST` | `/auth/createUser` | Registrar nuevo usuario | ❌ | - | ✅ 10/min |
 
 #### 👥 Gestión de Roles (`/rol`)
-| Método | Endpoint | Descripción | Requiere Auth | Rol Requerido |
-|--------|----------|-------------|---------------|---------------|
-| `GET` | `/rol` | Listar todos los roles | ✅ | Administrador |
-| `POST` | `/rol` | Crear nuevo rol | ✅ | Administrador |
-| `GET` | `/rol/:id` | Obtener rol por ID | ✅ | Administrador |
-| `PATCH` | `/rol/:id` | Actualizar rol | ✅ | Administrador |
-| `PATCH` | `/rol/desactivate/:id` | Desactivar rol | ✅ | Administrador |
-| `DELETE` | `/rol/:id` | Eliminar rol | ✅ | Administrador |
+| Método | Endpoint | Descripción | Requiere Auth | Rol Requerido | Rate Limit |
+|--------|----------|-------------|---------------|---------------|------------|
+| `GET` | `/rol` | Listar todos los roles | ✅ | Administrador | ✅ 10/min |
+| `POST` | `/rol` | Crear nuevo rol | ✅ | Administrador | ✅ 10/min |
+| `GET` | `/rol/:id` | Obtener rol por ID | ✅ | Administrador | ✅ 10/min |
+| `PATCH` | `/rol/:id` | Actualizar rol | ✅ | Administrador | ✅ 10/min |
+| `PATCH` | `/rol/desactivate/:id` | Desactivar rol | ✅ | Administrador | ✅ 10/min |
+| `DELETE` | `/rol/:id` | Eliminar rol | ✅ | Administrador | ✅ 10/min |
 
 #### 🔄 Gestión de Estados (`/estados`)
-| Método | Endpoint | Descripción | Requiere Auth | Rol Requerido |
-|--------|----------|-------------|---------------|---------------|
-| `GET` | `/estados` | Listar todos los estados | ✅ | Admin/Editor |
-| `POST` | `/estados` | Crear nuevo estado | ✅ | Administrador |
-| `GET` | `/estados/:id` | Obtener estado por ID | ✅ | Admin/Editor |
-| `PATCH` | `/estados/:id` | Actualizar estado | ✅ | Administrador |
-| `PATCH` | `/estados/:id/desactivate` | Desactivar estado | ✅ | Administrador |
-| `PATCH` | `/estados/:id/reactivate` | Reactivar estado | ✅ | Administrador |
-| `DELETE` | `/estados/:id` | Eliminar estado (soft delete) | ✅ | Administrador |
+| Método | Endpoint | Descripción | Requiere Auth | Rol Requerido | Rate Limit |
+|--------|----------|-------------|---------------|---------------|------------|
+| `GET` | `/estados` | Listar todos los estados | ✅ | Admin/Editor | ✅ 10/min |
+| `POST` | `/estados` | Crear nuevo estado | ✅ | Administrador | ✅ 10/min |
+| `GET` | `/estados/:id` | Obtener estado por ID | ✅ | Admin/Editor | ✅ 10/min |
+| `PATCH` | `/estados/:id` | Actualizar estado | ✅ | Administrador | ✅ 10/min |
+| `PATCH` | `/estados/:id/desactivate` | Desactivar estado | ✅ | Administrador | ✅ 10/min |
+| `PATCH` | `/estados/:id/reactivate` | Reactivar estado | ✅ | Administrador | ✅ 10/min |
+| `DELETE` | `/estados/:id` | Eliminar estado (soft delete) | ✅ | Administrador | ✅ 10/min |
 
 #### 🏷️ Gestión de Categorías (`/categoria`)
-| Método | Endpoint | Descripción | Requiere Auth | Rol Requerido |
-|--------|----------|-------------|---------------|---------------|
-| `GET` | `/categoria` | Listar todas las categorías activas | ✅ | Admin/Editor/Usuario |
-| `POST` | `/categoria` | Crear nueva categoría | ✅ | Administrador |
-| `GET` | `/categoria/:id` | Obtener categoría por ID | ✅ | Admin/Editor/Usuario |
-| `PATCH` | `/categoria/:id` | Actualizar categoría | ✅ | Administrador |
-| `PATCH` | `/categoria/:id/desactivate` | Desactivar categoría | ✅ | Administrador |
-| `PATCH` | `/categoria/:id/reactivate` | Reactivar categoría | ✅ | Administrador |
-| `DELETE` | `/categoria/:id` | Eliminar categoría (soft delete) | ✅ | Administrador |
+| Método | Endpoint | Descripción | Requiere Auth | Rol Requerido | Rate Limit |
+|--------|----------|-------------|---------------|---------------|------------|
+| `GET` | `/categoria` | Listar todas las categorías activas | ✅ | Admin/Editor/Usuario | ✅ 10/min |
+| `POST` | `/categoria` | Crear nueva categoría | ✅ | Administrador | ✅ 10/min |
+| `GET` | `/categoria/:id` | Obtener categoría por ID | ✅ | Admin/Editor/Usuario | ✅ 10/min |
+| `PATCH` | `/categoria/:id` | Actualizar categoría | ✅ | Administrador | ✅ 10/min |
+| `PATCH` | `/categoria/:id/desactivate` | Desactivar categoría | ✅ | Administrador | ✅ 10/min |
+| `PATCH` | `/categoria/:id/reactivate` | Reactivar categoría | ✅ | Administrador | ✅ 10/min |
+| `DELETE` | `/categoria/:id` | Eliminar categoría (soft delete) | ✅ | Administrador | ✅ 10/min |
 
 #### 📰 Gestión de Noticias (`/noticias`)
-| Método | Endpoint | Descripción | Requiere Auth | Rol Requerido |
-|--------|----------|-------------|---------------|---------------|
-| `GET` | `/noticias` | Listar noticias públicas | ❌ | - |
-| `GET` | `/noticias/findAll` | Listar todas las noticias | ✅ | Admin/Editor/Usuario |
-| `GET` | `/noticias/getPendingRev` | Noticias pendientes de revisión | ✅ | Admin/Editor/Usuario |
-| `GET` | `/noticias/:id` | Obtener noticia por ID | ❌ | - |
-| `POST` | `/noticias` | Crear nueva noticia | ✅ | Admin/Editor/Usuario |
-| `PATCH` | `/noticias/:id` | Actualizar noticia | ✅ | Admin/Editor/Usuario |
-| `PATCH` | `/noticias/:id/desactivate` | Desactivar noticia | ✅ | Admin/Editor |
-| `PATCH` | `/noticias/:id/reactivate` | Reactivar noticia | ✅ | Admin/Editor |
-| `PATCH` | `/noticias/:id/vigencia` | Cambiar vigencia | ✅ | Admin/Editor |
-| `DELETE` | `/noticias/:id` | Eliminar noticia (soft delete) | ✅ | Administrador |
+| Método | Endpoint | Descripción | Requiere Auth | Rol Requerido | Rate Limit |
+|--------|----------|-------------|---------------|---------------|------------|
+| `GET` | `/noticias` | Listar noticias públicas | ❌ | - | ✅ 10/min |
+| `GET` | `/noticias/findAll` | Listar todas las noticias | ✅ | Admin/Editor/Usuario | ✅ 10/min |
+| `GET` | `/noticias/getPendingRev` | Noticias pendientes de revisión | ✅ | Admin/Editor/Usuario | ✅ 10/min |
+| `GET` | `/noticias/:id` | Obtener noticia por ID | ❌ | - | ✅ 10/min |
+| `POST` | `/noticias` | Crear nueva noticia | ✅ | Admin/Editor/Usuario | ✅ 10/min |
+| `PATCH` | `/noticias/:id` | Actualizar noticia | ✅ | Admin/Editor/Usuario | ✅ 10/min |
+| `PATCH` | `/noticias/:id/desactivate` | Desactivar noticia | ✅ | Admin/Editor | ✅ 10/min |
+| `PATCH` | `/noticias/:id/reactivate` | Reactivar noticia | ✅ | Admin/Editor | ✅ 10/min |
+| `PATCH` | `/noticias/:id/vigencia` | Cambiar vigencia | ✅ | Admin/Editor | ✅ 10/min |
+| `DELETE` | `/noticias/:id` | Eliminar noticia (soft delete) | ✅ | Administrador | ✅ 10/min |
 
 #### ✏️ Gestión de Párrafos (`/create-paragraphs`)
-| Método | Endpoint | Descripción | Requiere Auth | Rol Requerido |
-|--------|----------|-------------|---------------|---------------|
-| `GET` | `/create-paragraphs` | Listar todos los párrafos | ✅ | Admin/Editor/Usuario |
-| `POST` | `/create-paragraphs/:id` | Crear párrafo en noticia específica | ✅ | Admin/Editor/Usuario |
-| `GET` | `/create-paragraphs/:id` | Obtener párrafo por ID | ✅ | Admin/Editor/Usuario |
-| `PATCH` | `/create-paragraphs/:id` | Actualizar párrafo | ✅ | Admin/Editor/Usuario |
-| `PATCH` | `/create-paragraphs/:id/desactivate` | Desactivar párrafo | ✅ | Administrador |
-| `PATCH` | `/create-paragraphs/:id/reactivate` | Reactivar párrafo | ✅ | Administrador |
-| `DELETE` | `/create-paragraphs/:id` | Eliminar párrafo (soft delete) | ✅ | Administrador |
+| Método | Endpoint | Descripción | Requiere Auth | Rol Requerido | Rate Limit |
+|--------|----------|-------------|---------------|---------------|------------|
+| `GET` | `/create-paragraphs` | Listar todos los párrafos | ✅ | Admin/Editor/Usuario | ✅ 10/min |
+| `POST` | `/create-paragraphs/:id` | Crear párrafo en noticia específica | ✅ | Admin/Editor/Usuario | ✅ 10/min |
+| `GET` | `/create-paragraphs/:id` | Obtener párrafo por ID | ✅ | Admin/Editor/Usuario | ✅ 10/min |
+| `PATCH` | `/create-paragraphs/:id` | Actualizar párrafo | ✅ | Admin/Editor/Usuario | ✅ 10/min |
+| `PATCH` | `/create-paragraphs/:id/desactivate` | Desactivar párrafo | ✅ | Administrador | ✅ 10/min |
+| `PATCH` | `/create-paragraphs/:id/reactivate` | Reactivar párrafo | ✅ | Administrador | ✅ 10/min |
+| `DELETE` | `/create-paragraphs/:id` | Eliminar párrafo (soft delete) | ✅ | Administrador | ✅ 10/min |
 
 ### Autenticación
 
@@ -679,7 +715,8 @@ src/
 │   ├── auth.service.ts
 │   ├── guards/
 │   │   ├── jwt-auth.guard.ts
-│   │   └── roles.guard.ts
+│   │   ├── roles.guard.ts
+│   │   └── custom-throttler.guard.ts  # 🆕 Guard personalizado de rate limiting
 │   └── auth.module.ts
 ├── roles/                 # Módulo de roles
 │   ├── role.controller.ts
@@ -735,7 +772,7 @@ src/
 │   └── create-rol.dto.ts
 ├── utils/                 # Utilidades
 │   └── error.utils.ts
-├── app.module.ts          # Módulo principal
+├── app.module.ts          # Módulo principal con ThrottlerModule
 └── main.ts               # Punto de entrada
 ```
 
@@ -751,8 +788,63 @@ src/
 - ✅ **Guards de roles** para control de acceso
 - ✅ **Endpoints públicos** claramente marcados
 - ✅ **Soft delete** para preservar integridad de datos
-- ✅ **Rate limiting** (recomendado para producción)
+- ✅ **🆕 Rate Limiting Global** con ThrottlerModule
+- ✅ **🆕 Protección contra ataques de fuerza bruta**
+- ✅ **🆕 Respuestas de error personalizadas en español**
 - ✅ **Sanitización de datos** automática
+
+### 🛡️ Sistema de Rate Limiting
+
+#### **Configuración del ThrottlerModule**
+```typescript
+// Configuración en app.module.ts
+ThrottlerModule.forRoot([{
+  ttl: 60000,        // 60 segundos (1 minuto)
+  limit: 10,         // 10 solicitudes máximo
+}])
+
+// Guard personalizado global
+{
+  provide: APP_GUARD,
+  useClass: CustomThrottlerGuard,
+}
+```
+
+#### **CustomThrottlerGuard**
+El guard personalizado proporciona:
+- **Mensajes en español**: Respuestas de error localizadas
+- **Códigos de estado HTTP apropiados**: 429 Too Many Requests
+- **Estructura de respuesta consistente**: Formato JSON estándar
+- **Manejo de excepciones mejorado**: Control total sobre la respuesta
+
+#### **Características del Rate Limiting**
+- **Aplicación global**: Todos los endpoints están protegidos automáticamente
+- **Basado en IP**: Cada dirección IP tiene su propio contador
+- **Ventana deslizante**: El límite se resetea cada minuto
+- **Headers informativos**: La respuesta incluye información del límite
+- **Personalizable**: Fácil ajuste de límites y ventanas de tiempo
+- **Prevención de ataques**: Protección contra DDoS y ataques de fuerza bruta
+
+#### **Ejemplo de Implementación**
+```typescript
+// custom-throttler.guard.ts
+@Injectable()
+export class CustomThrottlerGuard extends ThrottlerGuard {
+    protected async throwThrottlingException(
+        context: ExecutionContext,
+        limit: ThrottlerLimitDetail,
+    ): Promise<void> {
+        throw new HttpException(
+            {
+                statusCode: HttpStatus.TOO_MANY_REQUESTS,
+                message: 'Has superado el límite de solicitudes. Por favor, intenta más tarde.',
+                error: 'Demasiadas solicitudes',
+            },
+            HttpStatus.TOO_MANY_REQUESTS,
+        );
+    }
+}
+```
 
 ### Usuario Administrador por Defecto
 
@@ -786,13 +878,56 @@ Al iniciar la aplicación, se crean automáticamente:
    ```bash
    NODE_ENV=production
    JWT_SECRET=tu_jwt_secret_muy_seguro_para_produccion
+   
+   # Configuración de Rate Limiting para producción (opcional)
+   THROTTLE_TTL=60000      # 1 minuto
+   THROTTLE_LIMIT=10       # 10 solicitudes por minuto
    ```
 
-2. **Build del proyecto**
+2. **Configuración de Rate Limiting para Producción**
+   ```typescript
+   // Para mayor seguridad en producción, considera ajustar:
+   ThrottlerModule.forRoot([{
+     ttl: 60000,    // 1 minuto
+     limit: 5,      // Límite más restrictivo para producción
+   }])
+   ```
+
+3. **Build del proyecto**
    ```bash
    pnpm run build
    pnpm run start:prod
    ```
+
+### Consideraciones de Seguridad para Producción
+
+#### **🛡️ Rate Limiting en Producción**
+- **Monitoreo**: Implementa logs para trackear intentos de rate limiting
+- **Alertas**: Configura alertas para detectar patrones de ataques
+- **Ajustes dinámicos**: Considera ajustar límites según el tráfico
+- **Whitelist**: Implementa excepciones para IPs confiables si es necesario
+
+#### **📊 Configuraciones Recomendadas**
+```typescript
+// Configuración conservadora para producción
+ThrottlerModule.forRoot([
+  {
+    name: 'short',
+    ttl: 60000,   // 1 minuto
+    limit: 5,     // 5 solicitudes por minuto
+  },
+  {
+    name: 'medium', 
+    ttl: 600000,  // 10 minutos
+    limit: 30,    // 30 solicitudes por 10 minutos
+  },
+  {
+    name: 'long',
+    ttl: 3600000, // 1 hora
+    limit: 100,   // 100 solicitudes por hora
+  },
+])
+```
 
 ### Plataformas Recomendadas
 
@@ -817,6 +952,8 @@ Al iniciar la aplicación, se crean automáticamente:
 - 📝 Mejorar documentación
 - 🧪 Agregar tests unitarios y e2e
 - 🔒 Mejorar medidas de seguridad
+- 🛡️ **🆕** Optimizar configuraciones de rate limiting
+- 📊 **🆕** Implementar métricas y monitoreo de rate limiting
 - 🚀 Optimización de performance
 - 📰 Mejoras en el sistema de noticias
 - 🔄 Mejoras en el sistema de estados
@@ -826,6 +963,24 @@ Al iniciar la aplicación, se crean automáticamente:
 - 🐛 Reportar y corregir bugs
 
 > **Nota**: Como el proyecto está en construcción, algunas funcionalidades pueden cambiar. ¡Mantente al día con los issues y discussions!
+
+## 📊 Changelog
+
+### **🆕 v1.0.0-dev.2 (Actual)**
+- ✅ **Implementado Rate Limiting Global** con ThrottlerModule
+- ✅ **CustomThrottlerGuard** con mensajes personalizados en español
+- ✅ **Protección contra ataques de fuerza bruta** y spam
+- ✅ **Headers informativos** de rate limiting
+- ✅ **Configuración flexible** para desarrollo y producción
+- ✅ **Documentación actualizada** con información de rate limiting
+
+### **v1.0.0-dev.1**
+- ✅ Sistema base de autenticación JWT
+- ✅ Gestión de usuarios y roles
+- ✅ Sistema de noticias con workflow
+- ✅ Sistema de categorías y estados
+- ✅ Sistema de párrafos modulares
+- ✅ Documentación Swagger automática
 
 ## 📞 Contacto
 
@@ -849,6 +1004,11 @@ Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) par
 <p align="center">
   <strong>🚧 Proyecto en desarrollo activo 🚧</strong><br>
   <sub>Si encuentras algún bug o tienes sugerencias, ¡no dudes en abrir un issue!</sub>
+</p>
+
+<p align="center">
+  <strong>🛡️ Ahora con protección avanzada contra ataques!</strong><br>
+  <sub>Rate Limiting implementado para una API más segura y estable</sub>
 </p>
 
 <p align="center">
