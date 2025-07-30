@@ -3,6 +3,7 @@ import { CreateImageService } from './create-image.service';
 import { CreateImageController } from './create-image.controller';
 import { Imagen } from '../entities/Imagen.entity';
 import { Noticia } from '../entities/Noticia.entity';
+import { Video } from '../entities/Video.entity';
 import { AuthModule } from '../authService/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
@@ -12,6 +13,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     TypeOrmModule.forFeature([
       Imagen,
       Noticia,
+      Video,
     ]),
   ],
   controllers: [CreateImageController],
