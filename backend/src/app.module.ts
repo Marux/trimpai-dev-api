@@ -13,6 +13,7 @@ import { CategoriaModule } from './categoria/categoria.module';
 import { CategoriaNoticiaModule } from './categoria-noticia/categoria-noticia.module';
 import { CreateParagraphsModule } from './create-paragraphs/create-paragraphs.module';
 import { CreateImageModule } from './create-image/create-image.module';
+import { CreateVideoModule } from './create-video/create-video.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { CreateImageModule } from './create-image/create-image.module';
     CategoriaNoticiaModule,
     CreateParagraphsModule,
     CreateImageModule,
+    CreateVideoModule,
   ],
   controllers: [],
   providers: [
